@@ -1,0 +1,31 @@
+/* plan viewer workspace */
+.pv { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .pv { grid-template-columns: minmax(0, 1fr); } }
+.pv-stage { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.pv-toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); flex-wrap: wrap; }
+.tool { height: 32px; min-width: 32px; padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r-md); border: 1px solid transparent; background: none; cursor: pointer; color: var(--ink-2); font-size: var(--fs-sm); }
+.tool svg { width: 16px; height: 16px; }
+.tool:hover { background: var(--surface); border-color: var(--line); }
+.tool.on { background: var(--navy-2); color: var(--on-navy); }
+.tool-sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 4px; }
+.pv-canvas { position: relative; overflow: hidden; background: var(--surface-3); min-height: 420px; touch-action: none; }
+.pv-canvas.mode-pan { cursor: grab; }
+.pv-canvas.mode-pan.dragging { cursor: grabbing; }
+.pv-canvas.mode-add { cursor: crosshair; }
+.pv-inner { transform-origin: 50% 50%; transition: transform .12s ease-out; padding: 16px; }
+.pv-inner.dragging { transition: none; }
+.pv-inner svg { box-shadow: var(--shadow-2); border-radius: 2px; }
+.pv-status { display: flex; gap: 12px; align-items: center; padding: 6px 12px; font-size: var(--fs-xs); color: var(--ink-3); border-top: 1px solid var(--line); background: var(--surface-2); flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.pin { cursor: pointer; }
+.pin circle.halo { opacity: 0; transition: opacity .15s; }
+.pin:hover circle.halo, .pin.sel circle.halo { opacity: 0.25; }
+.processing-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 70%, transparent); z-index: 2; }
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 800px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.overlay-stack { position: relative; }
+.overlay-stack > div + div { position: absolute; inset: 0; }
+.plan-thumb { position: relative; aspect-ratio: 1000 / 720; overflow: hidden; border-bottom: 1px solid var(--line); background: var(--plan-paper); border-radius: var(--r-lg) var(--r-lg) 0 0; max-width: 100%; }
+.plan-thumb .pt-badges { position: absolute; top: 8px; inset-inline-start: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+.dropzone { border: 2px dashed var(--line-strong); border-radius: var(--r-lg); padding: 28px; text-align: center; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+.dropzone:hover, .dropzone.over { border-color: var(--blueprint); background: var(--blueprint-faint); }
+.dropzone svg { width: 28px; height: 28px; color: var(--ink-3); }

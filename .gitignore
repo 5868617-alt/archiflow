@@ -1,0 +1,10 @@
+node_modules
+dist/
+tests/e2e/.storage/
+supabase/tests/remote_suite.sql
+.env
+.env.*
+!.env.example
+.vercel/
+.DS_Store
+*.log

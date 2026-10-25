@@ -1,0 +1,86 @@
+/* ArchiFlow design system
+   Layout concept: drafting-table workspace — a navy "title block" sidebar on the right (RTL),
+   warm paper workspace, hairline blueprint grids used sparingly, yellow reserved for primary actions. */
+:root {
+  /* color */
+  --bg: #F5F3EE;
+  --paper: #FBFAF7;
+  --surface: #FFFFFF;
+  --surface-2: #F8F6F1;
+  --surface-3: #EFECE4;
+  --line: #E3DFD5;
+  --line-strong: #CEC8BA;
+  --ink: #15213B;
+  --ink-2: #47526B;
+  --ink-3: #7A8296;
+  --navy: #15213B;
+  --navy-2: #1F2F52;
+  --navy-3: #2B3E68;
+  --on-navy: #EEF0F5;
+  --on-navy-2: #A9B3C9;
+  --accent: #F2B705;
+  --accent-hover: #E0A800;
+  --accent-ink: #15213B;
+  --accent-soft: #FCF1CC;
+  --blueprint: #6F8FC0;
+  --blueprint-faint: rgba(111, 143, 192, 0.14);
+  --plan-paper: #FDFCF8;
+  --plan-ink: #1D2A47;
+  --plan-fill: #F1EEE6;
+  --ok: #2E7656;  --ok-soft: #E2F0E8;
+  --warn: #A66A0B; --warn-soft: #FBEFD6;
+  --bad: #B13A3A; --bad-soft: #F8E3E1;
+  --info: #2D5C99; --info-soft: #E3ECF8;
+  --violet: #6A4C9C; --violet-soft: #EEE8F6;
+  --shadow-1: 0 1px 2px rgba(21, 33, 59, 0.06);
+  --shadow-2: 0 6px 24px rgba(21, 33, 59, 0.10);
+  --shadow-3: 0 18px 48px rgba(21, 33, 59, 0.22);
+  --scrim: rgba(13, 21, 38, 0.48);
+
+  /* type */
+  --font-display: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
+  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --fs-xs: 0.75rem; --fs-sm: 0.8125rem; --fs-md: 0.875rem; --fs-lg: 1rem; --fs-xl: 1.25rem; --fs-2xl: 1.625rem; --fs-3xl: 2.125rem;
+
+  /* shape */
+  --r-sm: 4px; --r-md: 6px; --r-lg: 10px;
+  --sidebar-w: 248px;
+  --topbar-h: 60px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1424; --paper: #111a2d; --surface: #141E33; --surface-2: #18233B; --surface-3: #1F2B46;
+    --line: #26324D; --line-strong: #34426A;
+    --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #8790A6;
+    --navy: #0A101D; --navy-2: #141E33; --navy-3: #1F2B46; --on-navy: #ECEAE4; --on-navy-2: #8F9AB3;
+    --accent: #F5C12E; --accent-hover: #FFD04D; --accent-ink: #15213B; --accent-soft: rgba(245, 193, 46, 0.14);
+    --blueprint: #7FA0D4; --blueprint-faint: rgba(127, 160, 212, 0.10);
+    --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
+    --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
+    --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
+    --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
+    --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
+    --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
+    --scrim: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1424; --paper: #111a2d; --surface: #141E33; --surface-2: #18233B; --surface-3: #1F2B46;
+  --line: #26324D; --line-strong: #34426A;
+  --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #8790A6;
+  --navy: #0A101D; --navy-2: #141E33; --navy-3: #1F2B46; --on-navy: #ECEAE4; --on-navy-2: #8F9AB3;
+  --accent: #F5C12E; --accent-hover: #FFD04D; --accent-ink: #15213B; --accent-soft: rgba(245, 193, 46, 0.14);
+  --blueprint: #7FA0D4; --blueprint-faint: rgba(127, 160, 212, 0.10);
+  --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
+  --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
+  --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
+  --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
+  --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
+  --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}

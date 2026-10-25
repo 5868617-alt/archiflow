@@ -1,0 +1,32 @@
+{
+  "name": "archiflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ArchiFlow – ניהול משרדי אדריכלות ועיצוב פנים (React + Supabase)",
+  "scripts": {
+    "build:site": "node build.mjs --live && cp dist/live/index.html site/index.html",
+    "build:demo": "node build.mjs && node build.mjs --test",
+    "build:test": "node build.mjs --live --test",
+    "test:db": "supabase/reset_test_db.sh && supabase/run_tests.sh",
+    "test:db:remote": "python3 supabase/tests/make_remote_suite.py",
+    "test:e2e:setup": "sh tests/e2e/restart.sh",
+    "test:e2e:gateway": "node tests/e2e/gateway.mjs",
+    "test:e2e:crawl": "node tests/e2e/crawl.mjs",
+    "test:e2e:flows": "node tests/e2e/flows.mjs",
+    "test:demo": "node tools/demo-crawl.mjs 400 && node tools/demo-flows.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-icons": "^5.7.0",
+    "typescript": "^6.0.3",
+    "playwright": "^1.63.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
