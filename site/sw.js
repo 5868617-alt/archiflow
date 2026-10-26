@@ -1,6 +1,6 @@
 // ArchiFlow service worker: makes the app installable and fast to open.
 // It never caches data: requests to the Supabase project always go to the network.
-const VERSION = 'mvoz9vrj';
+const VERSION = 'mvozndto';
 const SHELL = 'archiflow-shell-' + VERSION;
 const STATIC = 'archiflow-static-v1';
 const SHELL_FILES = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png'];

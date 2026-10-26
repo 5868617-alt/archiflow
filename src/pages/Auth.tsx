@@ -20,7 +20,7 @@ export function AuthLayout({ children, title, sub }: any) {
         </div>
       </div>
       <div className="auth-art">
-        <div style={{ position: 'absolute', inset: '10% -14% auto -6%', opacity: 0.5, ['--plan-paper' as any]: 'transparent', ['--plan-ink' as any]: 'rgba(169,179,201,.55)', ['--plan-fill' as any]: 'transparent', ['--blueprint' as any]: 'rgba(242,183,5,.6)' }} aria-hidden><PlanSvg layout="villa-ground" /></div>
+        <div style={{ position: 'absolute', inset: '10% -14% auto -6%', opacity: 0.5, ['--plan-paper' as any]: 'transparent', ['--plan-ink' as any]: 'rgba(169,179,201,.55)', ['--plan-fill' as any]: 'transparent', ['--blueprint' as any]: 'rgba(31,179,163,.6)' }} aria-hidden><PlanSvg layout="villa-ground" /></div>
         <div style={{ position: 'relative' }}>{live ? null : <span className="admin-badge">גרסת הדגמה</span>}</div>
         <div style={{ position: 'relative', maxWidth: 440 }}>
           <div className="display" style={{ fontSize: '2.2rem', lineHeight: 1.2, color: 'var(--on-navy)' }}>כל הפרויקט, משרטוט ראשון ועד מסירת מפתח.</div>

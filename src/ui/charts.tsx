@@ -123,8 +123,8 @@ export function FileIcon({ type }: { type: string }) {
 export function Logo({ size = 30 }: any) {
   return (
     <svg className="sb-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden>
-      <rect x="1" y="1" width="30" height="30" rx="3" fill="none" stroke="var(--accent)" strokeWidth="2" />
-      <path d="M7 25 L16 7 L25 25" fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinejoin="round" />
+      <rect x="1" y="1" width="30" height="30" rx="3" fill="none" stroke="var(--accent-bright)" strokeWidth="2" />
+      <path d="M7 25 L16 7 L25 25" fill="none" stroke="var(--accent-bright)" strokeWidth="2.4" strokeLinejoin="round" />
       <path d="M10.5 18 H21.5" stroke="currentColor" strokeWidth="2" />
       <circle cx="16" cy="7" r="1.8" fill="currentColor" />
     </svg>

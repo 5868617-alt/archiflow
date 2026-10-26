@@ -1,29 +1,31 @@
 /* ArchiFlow design system
    Layout concept: drafting-table workspace — a navy "title block" sidebar on the right (RTL),
-   cool drafting-vellum workspace, hairline blueprint grids used sparingly, yellow reserved for primary actions. */
+   cool drafting-vellum workspace, hairline blueprint grids used sparingly, turquoise reserved for primary actions. */
 :root {
   /* color */
-  --bg: #EDEFF3;
-  --paper: #F6F7F9;
+  --bg: #EEF2F4;
+  --paper: #F6F8F9;
   --surface: #FFFFFF;
-  --surface-2: #F5F6F9;
-  --surface-3: #E9ECF1;
-  --line: #E0E4EB;
-  --line-strong: #C9CFDA;
-  --ink: #15213B;
-  --ink-2: #47526B;
-  --ink-3: #7A8296;
-  --navy: #15213B;
-  --navy-2: #1F2F52;
-  --navy-3: #2B3E68;
-  --on-navy: #EEF0F5;
-  --on-navy-2: #A9B3C9;
-  --accent: #F2B705;
-  --accent-hover: #E0A800;
-  --accent-ink: #15213B;
-  --accent-soft: #FCF1CC;
-  --blueprint: #6F8FC0;
-  --blueprint-faint: rgba(111, 143, 192, 0.14);
+  --surface-2: #F4F7F8;
+  --surface-3: #E6ECEF;
+  --line: #DDE4E8;
+  --line-strong: #C3CED4;
+  --ink: #0F1C2A;
+  --ink-2: #41505E;
+  --ink-3: #6E7D8B;
+  --navy: #0E1A2B;
+  --navy-2: #16263B;
+  --navy-3: #22374F;
+  --on-navy: #EAF1F6;
+  --on-navy-2: #93A7B8;
+  --accent: #138476;
+  --accent-hover: #0F7166;
+  --accent-bright: #1FB3A3;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DAF1EE;
+  --accent-rgb: 31, 179, 163;
+  --blueprint: #4FA79D;
+  --blueprint-faint: rgba(31, 168, 154, 0.11);
   --plan-paper: #FDFCF8;
   --plan-ink: #1D2A47;
   --plan-fill: #F1EEE6;
@@ -32,10 +34,10 @@
   --bad: #B13A3A; --bad-soft: #F8E3E1;
   --info: #2D5C99; --info-soft: #E3ECF8;
   --violet: #6A4C9C; --violet-soft: #EEE8F6;
-  --st-exec: #2B3E68;
-  --shadow-1: 0 1px 2px rgba(21, 33, 59, 0.05), 0 1px 1px rgba(21, 33, 59, 0.03);
-  --shadow-2: 0 2px 4px rgba(21, 33, 59, 0.04), 0 10px 28px -6px rgba(21, 33, 59, 0.14);
-  --shadow-3: 0 24px 60px -12px rgba(21, 33, 59, 0.32);
+  --st-exec: #22374F;
+  --shadow-1: 0 1px 2px rgba(14, 26, 43, 0.05), 0 1px 1px rgba(14, 26, 43, 0.03);
+  --shadow-2: 0 2px 4px rgba(14, 26, 43, 0.04), 0 10px 28px -6px rgba(14, 26, 43, 0.14);
+  --shadow-3: 0 24px 60px -12px rgba(14, 26, 43, 0.32);
   --scrim: rgba(13, 21, 38, 0.48);
 
   /* type */
@@ -52,12 +54,12 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0D1424; --paper: #111a2d; --surface: #141E33; --surface-2: #18233B; --surface-3: #1F2B46;
-    --line: #26324D; --line-strong: #34426A;
+    --bg: #0A1420; --paper: #0E1A28; --surface: #112032; --surface-2: #15263A; --surface-3: #1B2F46;
+    --line: #22374D; --line-strong: #30485F;
     --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #8790A6;
-    --navy: #0A101D; --navy-2: #141E33; --navy-3: #1F2B46; --on-navy: #ECEAE4; --on-navy-2: #8F9AB3;
-    --accent: #F5C12E; --accent-hover: #FFD04D; --accent-ink: #15213B; --accent-soft: rgba(245, 193, 46, 0.14);
-    --blueprint: #7FA0D4; --blueprint-faint: rgba(127, 160, 212, 0.10);
+    --navy: #08111D; --navy-2: #122033; --navy-3: #1C2E45; --on-navy: #E6EEF4; --on-navy-2: #8CA0B2;
+    --accent: #2CC2B2; --accent-hover: #4FD3C5; --accent-bright: #2CC2B2; --accent-ink: #052521; --accent-soft: rgba(44, 194, 178, 0.14); --accent-rgb: 44, 194, 178;
+    --blueprint: #5FBDB2; --blueprint-faint: rgba(44, 194, 178, 0.09);
     --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
     --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
     --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
@@ -70,12 +72,12 @@
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0D1424; --paper: #111a2d; --surface: #141E33; --surface-2: #18233B; --surface-3: #1F2B46;
-  --line: #26324D; --line-strong: #34426A;
+  --bg: #0A1420; --paper: #0E1A28; --surface: #112032; --surface-2: #15263A; --surface-3: #1B2F46;
+  --line: #22374D; --line-strong: #30485F;
   --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #8790A6;
-  --navy: #0A101D; --navy-2: #141E33; --navy-3: #1F2B46; --on-navy: #ECEAE4; --on-navy-2: #8F9AB3;
-  --accent: #F5C12E; --accent-hover: #FFD04D; --accent-ink: #15213B; --accent-soft: rgba(245, 193, 46, 0.14);
-  --blueprint: #7FA0D4; --blueprint-faint: rgba(127, 160, 212, 0.10);
+  --navy: #08111D; --navy-2: #122033; --navy-3: #1C2E45; --on-navy: #E6EEF4; --on-navy-2: #8CA0B2;
+  --accent: #2CC2B2; --accent-hover: #4FD3C5; --accent-bright: #2CC2B2; --accent-ink: #052521; --accent-soft: rgba(44, 194, 178, 0.14); --accent-rgb: 44, 194, 178;
+  --blueprint: #5FBDB2; --blueprint-faint: rgba(44, 194, 178, 0.09);
   --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
   --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
   --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
