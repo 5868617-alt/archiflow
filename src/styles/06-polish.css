@@ -294,3 +294,14 @@ body.dragging-now, body.dragging-now * { cursor: grabbing !important; user-selec
 .ptl-fill { position: absolute; inset-block: -1px; inset-inline-start: -1px; background: var(--c); opacity: .9; border-radius: 6px; }
 .ptl-pct { position: absolute; inset-inline-start: calc(100% + 6px); top: -1px; font-size: 0.6875rem; font-weight: 600; line-height: 16px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 760px) { .ptl { --name-w: 112px; } .ptl-name { font-size: var(--fs-xs); } }
+
+/* ---------- landing after an e-mail link ---------- */
+.verified-badge { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent-soft) 45%, transparent); }
+.verified-badge svg { width: 30px; height: 30px; }
+.next-steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.next-steps li { counter-increment: s; display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; align-items: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.next-steps li::before { content: counter(s); grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: var(--fs-sm); }
+.next-steps li:first-child { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: 0 0 0 3px var(--accent-soft); }
+.next-steps li:first-child::before { background: var(--accent); }
+.next-steps b { font-weight: 600; }
+.next-steps span { color: var(--ink-2); font-size: var(--fs-sm); }

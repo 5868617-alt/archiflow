@@ -75,7 +75,13 @@ export class Supa {
     const access = p.get('access_token'); const refresh = p.get('refresh_token');
     if (access && refresh) {
       let user: any = {};
-      try { const payload = JSON.parse(atob(access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); user = { id: payload.sub, email: payload.email, user_metadata: payload.user_metadata }; } catch { /* keep empty */ }
+      try {
+        // JWT payload is base64url-encoded UTF-8 (Hebrew names): decode the bytes, not Latin-1 characters
+        const b64 = access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+        const payload = JSON.parse(new TextDecoder().decode(bytes));
+        user = { id: payload.sub, email: payload.email, user_metadata: payload.user_metadata };
+      } catch { /* keep empty */ }
       this.setSession({ access_token: access, refresh_token: refresh, expires_at: Number(p.get('expires_at')) || Math.floor(Date.now() / 1000) + Number(p.get('expires_in') || 3600), user });
     }
     return { type: p.get('type') || undefined };

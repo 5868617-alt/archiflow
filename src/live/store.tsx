@@ -14,6 +14,7 @@ export interface LiveApi {
   api: Supa; session: Session | null; status: 'boot' | 'anon' | 'loading' | 'ready' | 'no-context' | 'error'; error?: string;
   contexts: LiveContext[]; current: LiveContext | null; switchContext: (key: string) => void;
   signOut: () => Promise<void>; reload: () => Promise<void>; afterAuth: () => Promise<void>; saving: boolean;
+  landing: null | { kind: 'verified' | 'expired'; name?: string; email?: string }; clearLanding: () => void;
   upload: (bucket: string, projectId: string | null, file: File) => Promise<{ path: string; size: number }>;
   fileUrl: (bucket: string, path: string, download?: string) => Promise<string>;
   appUrl: string;
@@ -53,6 +54,8 @@ export function LiveStoreProvider({ children }: { children: any }) {
   const [path, setPath] = useState<string>(() => readPathFromUrl() || '/login');
   const [history, setHistory] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // what the user arrived from an e-mail link: shown as a full landing page before entering the app
+  const [landing, setLanding] = useState<null | { kind: 'verified' | 'expired'; name?: string; email?: string }>(null);
   const [theme, setThemeState] = useState<string>(() => { try { return localStorage.getItem('archiflow.theme') || 'system'; } catch { return 'system'; } });
   const [saving, setSaving] = useState(false);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -65,13 +68,18 @@ export function LiveStoreProvider({ children }: { children: any }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === 'bad' ? 6000 : undo ? 6500 : 3600);
   }, []);
   const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
+  const noteLanding = (t: { type?: string; error?: string }) => {
+    const u: any = api.session?.user || {};
+    if (t.error) setLanding({ kind: 'expired' });
+    else if (t.type === 'signup' || t.type === 'email') setLanding({ kind: 'verified', name: u.user_metadata?.full_name, email: u.email });
+  };
   const go = useCallback((to: string, replace = false) => {
     setPath(to);
     try { const url = '#' + to; if (replace) history_replace(url); else window.history.pushState(null, '', url); } catch { /* ignore */ }
   }, []);
   useEffect(() => {
     const f = () => {
-      if (/access_token=|error_description=/.test(location.hash)) { const t = api.consumeUrlTokens(); if (t.type === 'recovery') { go('/reset-password', true); return; } if (t.error) toast('הקישור אינו תקף או שפג תוקפו.', 'bad'); bootRef.current({ landing: true }); return; }
+      if (/access_token=|error_description=/.test(location.hash)) { const t = api.consumeUrlTokens(); if (t.type === 'recovery') { go('/reset-password', true); return; } noteLanding(t); bootRef.current({ landing: true }); return; }
       const p = readPathFromUrl(); if (p) setPath(p);
     };
     window.addEventListener('popstate', f); window.addEventListener('hashchange', f);
@@ -131,9 +139,8 @@ export function LiveStoreProvider({ children }: { children: any }) {
   useEffect(() => {
     if (booted.current) return; booted.current = true;
     const t = api.consumeUrlTokens();
-    if (t.error) toast('הקישור אינו תקף או שפג תוקפו. אפשר לבקש קישור חדש.', 'bad');
     if (t.type === 'recovery') { setStatus(api.session ? 'ready' : 'anon'); go('/reset-password', true); return; }
-    if (t.type === 'signup' || t.type === 'email' || t.type === 'magiclink') toast('כתובת המייל אומתה. ברוכים הבאים!', 'ok');
+    noteLanding(t);
     boot({ landing: !!t.type && !readPathFromUrl()?.startsWith('/accept-invite') });
   }, []); // eslint-disable-line
 
@@ -195,6 +202,7 @@ export function LiveStoreProvider({ children }: { children: any }) {
 
   const live: LiveApi = {
     api, session, status, error, contexts, current, switchContext, signOut, reload, saving,
+    landing, clearLanding: () => setLanding(null),
     afterAuth: () => boot({ landing: true }),
     upload: async (bucket, projectId, file) => {
       const office = current?.officeId; if (!office) throw { message: 'no office' };

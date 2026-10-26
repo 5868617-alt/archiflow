@@ -233,3 +233,67 @@ export function LiveError() {
     </div>
   );
 }
+
+// Landing page after the sign-up confirmation link: a real page, not just a toast.
+export function LiveVerified() {
+  const { live, nav } = useStore();
+  const lv = live!;
+  const first = (lv.landing?.name || '').trim().split(/\s+/)[0];
+  const loading = lv.status === 'boot' || lv.status === 'loading';
+  const needsOffice = lv.status === 'no-context';
+  const admin = lv.current?.kind === 'admin' && lv.contexts.length === 1;
+  const invite = pendingInvite();
+  const go = () => { lv.clearLanding(); if (invite) nav('/accept-invite?token=' + encodeURIComponent(invite)); else if (needsOffice) nav('/onboarding'); };
+  return (
+    <AuthLayout title={first ? `ברוכים הבאים, ${first}!` : 'ברוכים הבאים!'} sub="כתובת המייל אומתה והחשבון שלך פעיל.">
+      <div className="verified-badge" aria-hidden><LuMailCheck /></div>
+      {lv.landing?.email ? <p className="small soft">החשבון: <b className="ltr">{lv.landing.email}</b></p> : null}
+      {invite ? <Callout kind="info" title="הוזמנת להצטרף למשרד">בשלב הבא נצרף אותך למשרד שהזמין אותך.</Callout> : null}
+      {needsOffice && !invite ? (
+        <div className="stack">
+          <div className="section-title" style={{ marginBottom: 0 }}>מה עכשיו</div>
+          <ol className="next-steps">
+            <li><b>פתיחת המשרד</b><span>שם המשרד ופרטים בסיסיים. לוקח דקה.</span></li>
+            <li><b>הזמנת הצוות</b><span>אפשר עכשיו או בכל זמן אחר מתוך המערכת.</span></li>
+            <li><b>הפרויקט הראשון</b><span>לקוח, כתובת, תקציב ביצוע ושכר טרחה.</span></li>
+          </ol>
+        </div>
+      ) : null}
+      <Btn kind="primary" size="lg" className="block" icon={loading ? undefined : invite || needsOffice ? LuBuilding2 : LuLogIn} disabled={loading} onClick={go}>
+        {loading ? <><Spin />מכינים את החשבון…</> : invite ? 'להצטרפות למשרד' : needsOffice ? 'לפתיחת המשרד' : admin ? 'כניסה לניהול המערכת' : 'כניסה ל-ArchiFlow'}
+      </Btn>
+      {lv.status === 'error' ? <Callout kind="bad">{lv.error || 'לא הצלחנו לטעון את החשבון.'} נסו לרענן את הדף.</Callout> : null}
+    </AuthLayout>
+  );
+}
+
+// Landing page for an old, used or broken e-mail link, with a way to get a new one.
+export function LiveLinkExpired() {
+  const { live, nav } = useStore();
+  const lv = live!;
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState<'idle' | 'busy' | 'sent'>('idle');
+  const [err, setErr] = useState('');
+  const resend = async (e: any) => {
+    e.preventDefault();
+    if (!okEmail(email)) { setErr('כתובת המייל לא תקינה'); return; }
+    setErr(''); setState('busy');
+    try { await lv.api.resend(email.trim(), lv.appUrl); setState('sent'); }
+    catch (x: any) { setState('idle'); setErr(friendlyError(x)); }
+  };
+  return (
+    <AuthLayout title="הקישור כבר לא בתוקף" sub="קישור אימות עובד פעם אחת ולזמן מוגבל.">
+      <Callout kind="info" title="כבר אישרת את המייל?">אם לחצת על הקישור קודם, החשבון כבר פעיל ואפשר פשוט להיכנס.</Callout>
+      <Btn kind="primary" className="block" icon={LuLogIn} onClick={() => { lv.clearLanding(); nav('/login'); }}>לכניסה</Btn>
+      <div className="sep" />
+      {state === 'sent' ? (
+        <Callout kind="ok" icon={LuMailCheck} title={`שלחנו קישור חדש ל-${email.trim()}`}>הקישור החדש תקף לזמן מוגבל. אם הוא לא מגיע תוך כמה דקות, בדקו בתיקיית הספאם.</Callout>
+      ) : (
+        <form className="stack" noValidate onSubmit={resend}>
+          <Field label="לא אישרת עדיין? נשלח קישור חדש" error={err} htmlFor="lx-e"><Input id="lx-e" type="email" dir="ltr" autoComplete="email" value={email} invalid={err} onChange={(e: any) => setEmail(e.target.value)} placeholder="name@example.com" /></Field>
+          <Btn type="submit" icon={LuMail} disabled={state === 'busy'}>{state === 'busy' ? 'שולח…' : 'שליחת קישור חדש'}</Btn>
+        </form>
+      )}
+    </AuthLayout>
+  );
+}

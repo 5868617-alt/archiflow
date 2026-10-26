@@ -280,6 +280,9 @@ log(await nu.isVisible('text=שלחנו מייל אימות'), 'sign-up asks to 
 const conf = await (await fetch(BASE + '/__test/confirm?email=noam.new@example.com')).json();
 await nu.goto(BASE + conf.link.replace(/^https?:\/\/[^/]+/, ''));
 await nu.waitForTimeout(1500);
+log(await nu.isVisible('h1:has-text("ברוכים הבאים")') && await nu.isVisible('text=כתובת המייל אומתה'), 'confirmation link opens a welcome landing page');
+await nu.click('button:has-text("לפתיחת המשרד")');
+await nu.waitForTimeout(600);
 log(await nu.isVisible('text=הקמת המשרד'), 'confirmed user without an office goes to onboarding');
 await nu.fill('#ob-o', 'סטודיו חדש בדיקה');
 for (let i = 0; i < 3; i++) await nu.click('button:has-text("הבא"), button:has-text("המשך")');
@@ -289,6 +292,15 @@ await settle(nu);
 log((await q("select s.status || '/' || s.plan_id from public.offices o join public.office_subscriptions s on s.office_id = o.id where o.name = 'סטודיו חדש בדיקה'")) === 'trialing/pro', 'office created with a Pro trial');
 log(nu.url().includes('/dashboard') && (await nu.isVisible('text=סטודיו חדש בדיקה')), 'new owner lands in the new office');
 await nu.context().close();
+
+// ---------------------------------------------------------------- expired / used e-mail link
+const ex = await newPage(browser);
+await ex.goto(BASE + '/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+await ex.waitForTimeout(1200);
+log(await ex.isVisible('h1:has-text("הקישור כבר לא בתוקף")') && await ex.isVisible('button:has-text("שליחת קישור חדש")'), 'an expired e-mail link opens a clear landing page with a resend option');
+await ex.fill('#lx-e', 'noam.new@example.com'); await ex.click('button:has-text("שליחת קישור חדש")'); await ex.waitForTimeout(800);
+log(await ex.isVisible('text=שלחנו קישור חדש'), 'a new confirmation link can be requested from that page');
+await ex.context().close();
 
 // ---------------------------------------------------------------- invitation link → sign up → accept
 const tok = await q("select payload ->> 'token' from public.email_outbox where to_email = 'gal.new@example.com'");
@@ -304,6 +316,8 @@ await inv.click('button[type=submit]');
 await inv.waitForTimeout(600);
 const conf2 = await (await fetch(BASE + '/__test/confirm?email=gal.new@example.com')).json();
 await inv.goto(BASE + conf2.link.replace(/^https?:\/\/[^/]+/, ''));
+await inv.waitForTimeout(1500);
+await inv.click('button:has-text("להצטרפות למשרד")');
 await inv.waitForTimeout(2500);
 await settle(inv);
 log((await q("select m.role from public.office_members m join auth.users u on u.id = m.user_id where u.email = 'gal.new@example.com'")) === 'member', 'invitee joined the office as member after confirming');

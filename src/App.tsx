@@ -28,7 +28,7 @@ import { BillingPage, InvoiceDetail, PricingPage, ChangePlan, CancelFlow } from 
 import { HelpCenter, HelpArticle, SupportPage, TicketDetail } from './pages/Help';
 import { PortalRouter } from './pages/Portal';
 import { AdminRouter } from './pages/Admin';
-import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError } from './live/AuthLive';
+import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired } from './live/AuthLive';
 
 function Denied({ text }: any) {
   const { me, nav, live } = useStore();
@@ -93,6 +93,8 @@ export function App() {
   if (live) {
     if (a === 'accept-invite') return <PublicShell plain><LiveAcceptInvite /></PublicShell>;
     if (a === 'reset-password') return <PublicShell plain><LiveResetPassword /></PublicShell>;
+    if (live.landing?.kind === 'verified') return <PublicShell plain><LiveVerified /></PublicShell>;
+    if (live.landing?.kind === 'expired') return <PublicShell plain><LiveLinkExpired /></PublicShell>;
     if (live.status === 'boot' || live.status === 'loading') return <LiveLoading />;
     if (live.status === 'error') return <LiveError />;
     if (live.status === 'anon') {

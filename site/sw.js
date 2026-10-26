@@ -1,7 +1,7 @@
 // ArchiFlow service worker: makes the app installable and lets it open offline.
 // It only handles this site's own files. Anything from another host (React and pdf.js from cdnjs,
 // Google Fonts, the Supabase project) is never touched: the browser loads it directly as usual.
-const VERSION = 'mvozr298';
+const VERSION = 'mvp5lvgh';
 const SHELL = 'archiflow-shell-' + VERSION;
 const SHELL_FILES = ['/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png'];
 
