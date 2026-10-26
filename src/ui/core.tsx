@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LuX, LuChevronLeft, LuChevronUp, LuChevronDown, LuChevronsUpDown, LuFlaskConical, LuSparkles, LuInfo, LuTriangleAlert, LuCircleCheck, LuCircleAlert, LuSearch, LuInbox, LuLock, LuArrowUpRight, LuCamera } from 'react-icons/lu';
 import { useStore } from '../data/store';
+import { useCountUp } from './confetti';
 import { initials } from '../lib/format';
 
 export const cx = (...a: any[]) => a.filter(Boolean).join(' ');
@@ -115,10 +116,11 @@ export function Card({ title, icon: Icon, actions, children, className, pad, foo
   );
 }
 export function Stat({ label, value, meta, icon: Icon, tone, onClick }: any) {
+  const n = useCountUp(typeof value === 'number' ? value : NaN);
   return (
     <div className={cx('card stat', tone, onClick && 'link')} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={(e: any) => { if (onClick && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}>
       <div className="s-label">{Icon ? <Icon aria-hidden /> : null}{label}</div>
-      <div className="s-value">{value}</div>
+      <div className="s-value">{typeof value === 'number' ? n : value}</div>
       {meta ? <div className="s-meta">{meta}</div> : null}
       {onClick ? <LuArrowUpRight className="s-go" aria-hidden /> : null}
     </div>

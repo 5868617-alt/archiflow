@@ -6,6 +6,7 @@ import { DEMO_TODAY, todayISO, daysFromToday } from '../data/dates';
 import { PROJECT_STATUSES } from '../data/types';
 import { Card, Btn, Badge, StatusBadge, Empty, AssumeTag, Progress, cx, STATUS_COLORS } from '../ui/core';
 import { Donut, Columns, ProjectTimeline } from '../ui/charts';
+import { useCountUp } from '../ui/confetti';
 import { TaskLine, ActivityFeed, MeetingLine } from './shared';
 import { DOW, monthName, ils, pct, relDay } from '../lib/format';
 
@@ -164,10 +165,11 @@ export function Dashboard() {
 }
 
 function HeroCell({ label, icon: Icon, value, meta, tone, onClick }: any) {
+  const n = useCountUp(typeof value === 'number' ? value : NaN);
   return (
     <button type="button" className={cx('hero-cell', tone)} onClick={onClick}>
       <span className="hc-k"><Icon aria-hidden />{label}</span>
-      <span className="hc-v" style={{ display: 'block' }}>{value}</span>
+      <span className="hc-v" style={{ display: 'block' }}>{typeof value === 'number' ? n : value}</span>
       <span className="hc-m">{meta}</span>
     </button>
   );

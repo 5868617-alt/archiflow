@@ -1,3 +1,4 @@
+import { confetti } from '../ui/confetti';
 // Data access layer: read selectors, permission rules and write actions.
 // Future: each selector becomes a Supabase query; each action becomes an RPC/insert/update
 // protected by RLS. Keep UI components free of business rules.
@@ -346,3 +347,10 @@ export const A = {
   createTicket(db: DB, ctx: C, t: T.Ticket) { db.tickets.unshift(t); },
   saveAnnouncement(db: DB, ctx: C, a: T.Announcement, isNew: boolean) { if (isNew) db.announcements.unshift(a); else db.announcements[db.announcements.findIndex((x) => x.id === a.id)] = a; },
 };
+
+// a little celebration for finished work (skipped when motion is off)
+export function celebrate(fn: any, args: any[]) {
+  const A2: any = A;
+  if ((fn === A2.setTaskStatus || fn === A2.setProjectStatus) && args[1] === 'הושלם') confetti();
+  else if (fn === A2.decideApproval && args[1] === 'אושר') confetti();
+}

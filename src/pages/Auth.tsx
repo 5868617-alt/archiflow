@@ -14,7 +14,7 @@ export function AuthLayout({ children, title, sub }: any) {
     <div className="auth-wrap">
       <div className="auth-form">
         <div className="auth-card stack-lg">
-          <button type="button" className="row g8" style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)', padding: 0 }} onClick={() => nav('/pricing')}><Logo /><span className="display" style={{ fontSize: '1.4rem' }}>Archi<span style={{ color: 'var(--accent-hover)' }}>Flow</span></span></button>
+          <button type="button" className="row g8" style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)', padding: 0 }} onClick={() => nav('/pricing')}><Logo /><span className="display" style={{ fontSize: '1.4rem' }}>Archi<span style={{ color: 'var(--accent-strong)' }}>Flow</span></span></button>
           <div><h1 className="display" style={{ fontSize: 'var(--fs-2xl)' }}>{title}</h1>{sub ? <p className="soft mt8">{sub}</p> : null}</div>
           {children}
         </div>

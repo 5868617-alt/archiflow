@@ -26,7 +26,12 @@ function audit(mobile) {
     const layers = [];
     for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
       const s = getComputedStyle(n);
-      if (s.backgroundImage && s.backgroundImage !== 'none' && !s.backgroundImage.startsWith('linear-gradient(rgba') && !/radial|linear/.test(s.backgroundImage) ) return null; // image behind text: skip
+      if (s.backgroundImage && s.backgroundImage !== 'none' && !/gradient/.test(s.backgroundImage)) return null; // a picture behind text: skip
+      if (/gradient/.test(s.backgroundImage)) {
+        // solid gradients (e.g. the primary buttons): judge against the average of their opaque color stops
+        const stops = [...s.backgroundImage.matchAll(/rgba?\(([^)]+)\)/g)].map((m) => m[1].split(',').map(parseFloat)).filter((p) => p.length === 3 || p[3] >= 1);
+        if (stops.length) { const avg = (i) => stops.reduce((a, p) => a + p[i], 0) / stops.length; layers.push({ r: avg(0), g: avg(1), b: avg(2), a: 1 }); break; }
+      }
       const c = parse(s.backgroundColor); if (c && c.a > 0) { layers.push(c); if (c.a >= 1) break; }
     }
     let bg = { r: 255, g: 255, b: 255, a: 1 };
@@ -43,6 +48,7 @@ function audit(mobile) {
     const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
     if (!own) continue;
     const s = getComputedStyle(el);
+    if ((s.webkitBackgroundClip || s.backgroundClip) === 'text') continue; // gradient-filled text is checked by its colors, not by 'transparent'
     const fg = parse(s.color); const bg = bgOf(el); if (!fg || !bg) continue;
     const c = blend({ ...fg, a: fg.a * Number(s.opacity || 1) }, bg);
     const L1 = lum(c), L2 = lum(bg); const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
@@ -83,7 +89,7 @@ const totals = {}; const lines = [];
 for (const [user, list] of Object.entries(routes)) {
   for (const r of list) {
     await page.evaluate(([u, path]) => { localStorage.setItem('archiflow.demo.v3', JSON.stringify({ ...(JSON.parse(localStorage.getItem('archiflow.demo.v3') || '{}')), userId: u === 'anon' ? 'u_yoav' : u, path })); }, [user, r]);
-    await page.reload(); await page.waitForTimeout(r.includes('projects') && !r.includes('/p_') ? 450 : 200);
+    await page.reload(); await page.waitForTimeout(r.includes("projects") && !r.includes("/p_") ? 1000 : 750);
     const res = await page.evaluate(audit, width < 700);
     for (const x of res) { totals[x.rule] = (totals[x.rule] || 0) + 1; lines.push(`${user} ${r} · ${x.rule} · ${x.what}`); }
   }

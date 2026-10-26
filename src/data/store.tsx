@@ -1,5 +1,6 @@
 // Demo state container. In production this is replaced by Supabase queries;
 // UI components only talk to `db` (read) and `run(action, ...)` (write).
+import { celebrate } from './api';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import * as seed from './seed';
 import type * as T from './types';
@@ -105,6 +106,7 @@ export function StoreProvider({ children }: { children: any }) {
     });
   }, []);
   const run = useCallback((fn: any, ...args: any[]) => {
+    celebrate(fn, args);
     let out: any;
     setDb((cur) => {
       const draft = structuredClone(cur);

@@ -1,4 +1,5 @@
 // Live store: same context shape the screens already use (db, me, run, nav …), backed by Supabase.
+import { celebrate } from '../data/api';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type * as T from '../data/types';
 import { StoreCtx, type Ctx, type Toast, defaultPathFor, makeSeedDB } from '../data/store';
@@ -172,6 +173,7 @@ export function LiveStoreProvider({ children }: { children: any }) {
   const run = useCallback((fn: any, ...args: any[]) => {
     const name = ACTION_NAMES.get(fn) || 'inline';
     if (DEMO_ONLY.has(name)) { toast('הפעולה הזו קיימת רק בגרסת ההדגמה.', 'info'); return undefined; }
+    celebrate(fn, args);
     const before = dbRef.current;
     const draft = structuredClone(before);
     const out = fn(draft, { me: meRef.current }, ...args);

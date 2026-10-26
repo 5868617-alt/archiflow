@@ -1,40 +1,42 @@
 /* ArchiFlow design system
    Layout concept: drafting-table workspace — a navy "title block" sidebar on the right (RTL),
-   cool drafting-vellum workspace, hairline blueprint grids used sparingly, turquoise reserved for primary actions. */
+   blush-paper workspace with a deep plum sidebar; peach and pink (coolors efb0a1-f4afb4) carry primary actions, highlights and the animated gradient. */
 :root {
+  --grad: linear-gradient(120deg, #EFB0A1 0%, #F4AFB4 52%, #D9A5C9 100%);
+  --accent-strong: #93465F;
   /* color */
-  --bg: #EEF2F4;
-  --paper: #F6F8F9;
+  --bg: #FAF5F4;
+  --paper: #FDFAF9;
   --surface: #FFFFFF;
-  --surface-2: #F4F7F8;
-  --surface-3: #E6ECEF;
-  --line: #DDE4E8;
-  --line-strong: #C3CED4;
-  --ink: #0F1C2A;
-  --ink-2: #41505E;
-  --ink-3: #5A6977;
-  --navy: #0E1A2B;
-  --navy-2: #16263B;
-  --navy-3: #22374F;
-  --on-navy: #EAF1F6;
-  --on-navy-2: #93A7B8;
-  --accent: #138476;
-  --accent-hover: #0F7166;
-  --accent-bright: #1FB3A3;
-  --accent-ink: #FFFFFF;
-  --accent-soft: #DAF1EE;
-  --accent-rgb: 31, 179, 163;
-  --blueprint: #4FA79D;
-  --blueprint-faint: rgba(31, 168, 154, 0.11);
+  --surface-2: #FBF6F5;
+  --surface-3: #F4EBEA;
+  --line: #EFE3E2;
+  --line-strong: #DDCACB;
+  --ink: #2B2228;
+  --ink-2: #57494F;
+  --ink-3: #6A5C62;
+  --navy: #3D2233;
+  --navy-2: #4C2C40;
+  --navy-3: #643E55;
+  --on-navy: #FBF0F4;
+  --on-navy-2: #D6BCC8;
+  --accent: #EFB0A1;
+  --accent-hover: #EA9C8B;
+  --accent-bright: #F4AFB4;
+  --accent-ink: #2B2228;
+  --accent-soft: #FDECE8;
+  --accent-rgb: 244, 175, 180;
+  --blueprint: #D7A9B4;
+  --blueprint-faint: rgba(244, 175, 180, 0.13);
   --plan-paper: #FDFCF8;
-  --plan-ink: #1D2A47;
+  --plan-ink: #3A2B33;
   --plan-fill: #F1EEE6;
   --ok: #2E7656;  --ok-soft: #E2F0E8; --ok-ink: #FFFFFF;
   --warn: #8C5604; --warn-soft: #FBEFD6;
   --bad: #B13A3A; --bad-soft: #F8E3E1;
   --info: #2D5C99; --info-soft: #E3ECF8;
   --violet: #6A4C9C; --violet-soft: #EEE8F6;
-  --st-exec: #22374F;
+  --st-exec: #643E55;
   --shadow-1: 0 1px 2px rgba(14, 26, 43, 0.05), 0 1px 1px rgba(14, 26, 43, 0.03);
   --shadow-2: 0 2px 4px rgba(14, 26, 43, 0.04), 0 10px 28px -6px rgba(14, 26, 43, 0.14);
   --shadow-3: 0 24px 60px -12px rgba(14, 26, 43, 0.32);
@@ -54,36 +56,40 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0A1420; --paper: #0E1A28; --surface: #112032; --surface-2: #15263A; --surface-3: #1B2F46;
-    --line: #22374D; --line-strong: #30485F;
-    --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #9EA9BB; --ok-ink: #062316;
-    --navy: #08111D; --navy-2: #122033; --navy-3: #1C2E45; --on-navy: #E6EEF4; --on-navy-2: #8CA0B2;
-    --accent: #2CC2B2; --accent-hover: #4FD3C5; --accent-bright: #2CC2B2; --accent-ink: #052521; --accent-soft: rgba(44, 194, 178, 0.14); --accent-rgb: 44, 194, 178;
-    --blueprint: #5FBDB2; --blueprint-faint: rgba(44, 194, 178, 0.09);
+  --grad: linear-gradient(120deg, #EFB0A1 0%, #F4AFB4 52%, #D9A5C9 100%);
+  --accent-strong: #F0B6C6;
+    --bg: #1A1418; --paper: #1E171C; --surface: #241C22; --surface-2: #2A2128; --surface-3: #332830;
+    --line: #3A2E36; --line-strong: #4B3C46;
+    --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B3A2AA; --ok-ink: #062316;
+    --navy: #140E12; --navy-2: #21171E; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
+    --accent: #F2B9AC; --accent-hover: #F7CBC0; --accent-bright: #F4AFB4; --accent-ink: #2B2228; --accent-soft: rgba(239, 176, 161, 0.16); --accent-rgb: 244, 175, 180;
+    --blueprint: #B98C9B; --blueprint-faint: rgba(244, 175, 180, 0.08);
     --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
     --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
     --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
     --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
     --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
-    --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #8FA6D6;
+    --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #C79AB4;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
     --scrim: rgba(0, 0, 0, 0.6);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0A1420; --paper: #0E1A28; --surface: #112032; --surface-2: #15263A; --surface-3: #1B2F46;
-  --line: #22374D; --line-strong: #30485F;
-  --ink: #ECEAE4; --ink-2: #B6BDCC; --ink-3: #9EA9BB; --ok-ink: #062316;
-  --navy: #08111D; --navy-2: #122033; --navy-3: #1C2E45; --on-navy: #E6EEF4; --on-navy-2: #8CA0B2;
-  --accent: #2CC2B2; --accent-hover: #4FD3C5; --accent-bright: #2CC2B2; --accent-ink: #052521; --accent-soft: rgba(44, 194, 178, 0.14); --accent-rgb: 44, 194, 178;
-  --blueprint: #5FBDB2; --blueprint-faint: rgba(44, 194, 178, 0.09);
+  --grad: linear-gradient(120deg, #EFB0A1 0%, #F4AFB4 52%, #D9A5C9 100%);
+  --accent-strong: #F0B6C6;
+  --bg: #1A1418; --paper: #1E171C; --surface: #241C22; --surface-2: #2A2128; --surface-3: #332830;
+  --line: #3A2E36; --line-strong: #4B3C46;
+  --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B3A2AA; --ok-ink: #062316;
+  --navy: #140E12; --navy-2: #21171E; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
+  --accent: #F2B9AC; --accent-hover: #F7CBC0; --accent-bright: #F4AFB4; --accent-ink: #2B2228; --accent-soft: rgba(239, 176, 161, 0.16); --accent-rgb: 244, 175, 180;
+  --blueprint: #B98C9B; --blueprint-faint: rgba(244, 175, 180, 0.08);
   --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
   --ok: #5DBB8E; --ok-soft: rgba(93, 187, 142, 0.14);
   --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
   --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
   --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
-  --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #8FA6D6;
+  --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #C79AB4;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
   --scrim: rgba(0, 0, 0, 0.6);
   color-scheme: dark;

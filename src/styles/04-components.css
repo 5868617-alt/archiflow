@@ -98,7 +98,7 @@
   padding: 0 11px; font-size: var(--fs-md); color: var(--ink); min-width: 0;
 }
 .textarea { height: auto; min-height: 84px; padding: 9px 11px; resize: vertical; line-height: 1.5; }
-.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--blueprint); box-shadow: 0 0 0 3px var(--blueprint-faint); }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--accent-strong); box-shadow: 0 0 0 3px var(--blueprint-faint); }
 .input.invalid, .select.invalid, .textarea.invalid { border-color: var(--bad); }
 .input.sm, .select.sm { height: 32px; font-size: var(--fs-sm); }
 .select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: 14px 50%, 9px 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-left: 26px; }
