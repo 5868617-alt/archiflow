@@ -51,7 +51,7 @@ export function SpecsOverview() {
 export function ProjectSpecs({ projectId }: { projectId: string }) {
   const { db, me, nav, live } = useStore();
   const p = projectOf(db, projectId);
-  if (!p || !visibleProjectIds(db, me).has(projectId)) return <Empty title="הפרויקט לא נמצא או שאין גישה" />;
+  if (!p || !visibleProjectIds(db, me).has(projectId)) return <Empty heading="h1" title="הפרויקט לא נמצא או שאין גישה" />;
   return (
     <div>
       <PageHead crumbs={[{ label: 'מפרטים', to: '/specs' }, { label: p.name }]} title={`מפרט · ${p.name}`} actions={<Btn onClick={() => nav(`/projects/${projectId}`)}>לפרויקט</Btn>} />

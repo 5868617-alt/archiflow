@@ -161,7 +161,7 @@ export function MessagesPage({ query }: any) {
         <Card pad={false}>
           <div className="list">
             {withMsgs.map(({ p, last }) => (
-              <button key={p.id} type="button" className={cx('li click')} style={{ background: sel === p.id ? 'var(--accent-soft)' : undefined, border: 0, borderBottom: '1px solid var(--line)', width: '100%', textAlign: 'right', font: 'inherit', color: 'inherit' }} onClick={() => setSel(p.id)}>
+              <button key={p.id} type="button" className={cx('li click')} style={{ background: sel === p.id ? 'var(--accent-soft)' : 'transparent', border: 0, borderBottom: '1px solid var(--line)', width: '100%', textAlign: 'right', font: 'inherit', color: 'inherit' }} onClick={() => setSel(p.id)}>
                 <div className="li-main"><div className="li-title">{p.name}</div><div className="li-sub">{last ? `${last.authorName}: ${last.text}` : 'אין הודעות'}</div></div>
                 {last ? <span className="xs muted nowrap">{ago(last.at)}</span> : null}
               </button>

@@ -138,7 +138,7 @@ export function Onboarding() {
   };
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px max(16px, env(safe-area-inset-left, 0px)) 64px max(16px, env(safe-area-inset-right, 0px))' }}>
-      <div className="row g8 mb8"><Logo /><b className="display" style={{ fontSize: '1.3rem' }}>הקמת המשרד</b></div>
+      <div className="row g8 mb8"><Logo /><h1 className="display" style={{ fontSize: '1.3rem' }}>הקמת המשרד</h1></div>
       <div className="steps">{steps.map((s, i) => <span key={s} className="row" style={{ gap: 0 }}><span className={cx('step', i < step && 'done', i === step && 'on')}><span className="s-n">{i < step ? '✓' : i + 1}</span>{s}</span>{i < steps.length - 1 ? <span className="step-line" /> : null}</span>)}</div>
       <div className="card pad stack-lg">
         {step === 0 ? (

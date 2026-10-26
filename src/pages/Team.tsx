@@ -180,7 +180,7 @@ export function MemberDetail({ id }: { id: string }) {
   const { db, me, run, toast, nav, live } = useStore();
   const u = byId(db.users, id);
   const [dis, setDis] = useState(false);
-  if (!u || !u.officeId) return <Empty title="המשתמש לא נמצא" action={<Btn onClick={() => nav('/team')}>לצוות</Btn>} />;
+  if (!u || !u.officeId) return <Empty heading="h1" title="המשתמש לא נמצא" action={<Btn onClick={() => nav('/team')}>לצוות</Btn>} />;
   const as = db.assignments.filter((a) => a.userId === id);
   const tasks = db.tasks.filter((t) => t.assigneeId === id && t.status !== 'הושלם').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const can = canManageTeam(me) && u.role !== 'owner' && u.id !== me.id;

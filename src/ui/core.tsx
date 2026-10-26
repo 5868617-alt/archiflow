@@ -105,7 +105,7 @@ export function Card({ title, icon: Icon, actions, children, className, pad, foo
     <section className={cx('card', onClick && 'link', className)} onClick={onClick}>
       {title ? (
         <div className="card-head">
-          <h3>{Icon ? <Icon aria-hidden /> : null}{title}</h3>
+          <h2>{Icon ? <Icon aria-hidden /> : null}{title}</h2>
           {actions ? <div className="row wrap g4">{actions}</div> : null}
         </div>
       ) : null}
@@ -298,11 +298,12 @@ export function SearchBox({ value, onChange, placeholder = 'חיפוש…', id }
 }
 
 // ---------- states ----------
-export function Empty({ icon: Icon = LuInbox, title, children, action }: any) {
+export function Empty({ icon: Icon = LuInbox, title, children, action, heading }: any) {
+  const T: any = heading || 'div';
   return (
     <div className="empty">
       <div className="e-ic"><Icon aria-hidden /></div>
-      <div className="e-title">{title}</div>
+      <T className="e-title">{title}</T>
       {children ? <div className="small" style={{ maxWidth: 380 }}>{children}</div> : null}
       {action ? <div className="mt8">{action}</div> : null}
     </div>

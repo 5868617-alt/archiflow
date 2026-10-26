@@ -1,3 +1,4 @@
+import { AccessibilityMenu } from './A11y';
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
 import { LuHouse, LuPencilRuler, LuFileText, LuBadgeCheck, LuCalendarDays, LuMessageCircle, LuHistory, LuShieldCheck, LuGauge, LuBuilding2, LuUsers, LuCreditCard, LuTag, LuScrollText, LuChartBar, LuTicket, LuMegaphone, LuActivity, LuDatabase, LuSettings, LuMenu, LuBell, LuArrowRight } from 'react-icons/lu';
@@ -35,6 +36,7 @@ export function PortalShell({ children }: any) {
               <div className="bold ellipsis">{db.office.name}</div>
               <div className="xs muted">פורטל לקוחות · {client?.name}</div>
             </div>
+            <AccessibilityMenu />
             <ThemeToggle />
             <NotificationBell centerPath="/portal/notifications" />
             <RoleSwitcher compact />
@@ -48,7 +50,7 @@ export function PortalShell({ children }: any) {
           </nav>
         </div>
       </header>
-      <main className="portal-main">{children}</main>
+      <main className="portal-main" id="main">{children}</main>
       <footer className="portal-main" style={{ paddingTop: 0 }}>
         <div className="privacy-note"><LuShieldCheck aria-hidden /><span>{IS_LIVE ? 'בפורטל מוצגים רק פריטים שהמשרד סימן כמשותפים איתך. ההגבלה נאכפת בשרת.' : 'בפורטל מוצגים רק פריטים שהמשרד סימן כמשותפים איתך. בדמו ההגבלה מדומה בצד הדפדפן; בגרסת הייצור היא תיאכף בשרת (Row Level Security).'} <span className="muted">· Powered by ArchiFlow</span></span></div>
       </footer>
@@ -106,9 +108,9 @@ export function AdminShell({ children }: any) {
         <header className="topbar">
           <IconBtn icon={LuMenu} label="תפריט" className="mobile-menu-btn" onClick={() => setOpen(true)} />
           <div className="bold">קונסולת ניהול פלטפורמה</div>
-          <div className="tb-actions"><ThemeToggle /><RoleSwitcher /></div>
+          <div className="tb-actions"><AccessibilityMenu /><ThemeToggle /><RoleSwitcher /></div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content" id="main">{children}</main>
       </div>
       <Toasts />
     </div>
@@ -122,7 +124,7 @@ export function PublicShell({ children, plain }: any) {
       <DemoStrip />
       {!plain ? (
         <header className="public-top">
-          <button type="button" className="brand" onClick={() => nav('/pricing')} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)' }}><span style={{ color: 'var(--ink)' }}><Logo /></span>Archi<span>Flow</span></button>
+          <button type="button" className="brand" onClick={() => nav('/pricing')} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)' }}><span style={{ color: 'var(--ink)' }}><Logo /></span><span className="ltr">Archi<span>Flow</span></span></button>
           <div className="grow" />
           <button type="button" className="btn ghost" onClick={() => nav('/pricing')}>תמחור</button>
           <button type="button" className="btn ghost" onClick={() => nav('/help')}>מרכז עזרה</button>
@@ -130,7 +132,8 @@ export function PublicShell({ children, plain }: any) {
           <button type="button" className="btn primary hide-sm" onClick={() => nav('/register')}>התחלת ניסיון</button>
         </header>
       ) : null}
-      {children}
+      <main id="main">{children}</main>
+      <AccessibilityMenu floating />
       <Toasts />
     </div>
   );

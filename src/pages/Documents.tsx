@@ -211,8 +211,8 @@ export function DocumentDetail({ id }: { id: string }) {
   const d = byId(db.documents, id);
   const [upload, setUpload] = useState(false);
   const [send, setSend] = useState(false);
-  if (!d || !inScope(db, me)(d.projectId)) return <Empty title="המסמך לא נמצא או שאין גישה" action={<Btn onClick={() => nav('/documents')}>לספריית המסמכים</Btn>} />;
-  if (!canSeeDoc(me, d)) return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty icon={LuLock} title="מסמך מוגבל">המסמך זמין לבעלים ולמנהלי המשרד בלבד.</Empty></div>;
+  if (!d || !inScope(db, me)(d.projectId)) return <Empty heading="h1" title="המסמך לא נמצא או שאין גישה" action={<Btn onClick={() => nav('/documents')}>לספריית המסמכים</Btn>} />;
+  if (!canSeeDoc(me, d)) return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty heading="h1" icon={LuLock} title="מסמך מוגבל">המסמך זמין לבעלים ולמנהלי המשרד בלבד.</Empty></div>;
   const cur = d.versions[d.versions.length - 1];
   const canEdit = me.role === 'owner' || me.role === 'admin' || me.role === 'member';
   return (

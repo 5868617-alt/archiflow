@@ -17,7 +17,7 @@ const go = async (path, user) => { await page.evaluate(([p, u]) => { const v = J
 // 1 login
 await page.waitForSelector('text=כניסה לחשבון');
 await page.click('button[type=submit]');
-await page.waitForSelector('h1:has-text("טוב, יואב")', { timeout: 3000 }).then(() => log(true, 'login as Yoav')).catch(() => log(false, 'login'));
+await page.waitForSelector('h1:has-text(", יואב")', { timeout: 3000 }).then(() => log(true, 'login as Yoav')).catch(() => log(false, 'login'));
 
 // 2 create task with validation
 await go('/tasks?new=1');

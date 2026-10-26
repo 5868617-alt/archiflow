@@ -24,8 +24,8 @@ export function ProjectDetail({ id, tab }: { id: string; tab: string }) {
   const { db, me, nav, live } = useStore();
   const p = projectOf(db, id);
   const [editing, setEditing] = useState(false);
-  if (!p) return <Empty title="הפרויקט לא נמצא" action={<Btn onClick={() => nav('/projects')}>לרשימת הפרויקטים</Btn>} />;
-  if (!visibleProjectIds(db, me).has(p.id)) return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty title="אין לך גישה לפרויקט הזה">חברי צוות רואים רק פרויקטים שהם משויכים אליהם{IS_LIVE ? '.' : ' (הנחת דמו).'} פנו למנהל/ת המשרד לשיוך.</Empty></div>;
+  if (!p) return <Empty heading="h1" title="הפרויקט לא נמצא" action={<Btn onClick={() => nav('/projects')}>לרשימת הפרויקטים</Btn>} />;
+  if (!visibleProjectIds(db, me).has(p.id)) return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty heading="h1" title="אין לך גישה לפרויקט הזה">חברי צוות רואים רק פרויקטים שהם משויכים אליהם{IS_LIVE ? '.' : ' (הנחת דמו).'} פנו למנהל/ת המשרד לשיוך.</Empty></div>;
   const fin = canSeeFinance(db, me);
   const client = clientOf(db, p.clientId);
   const c = {

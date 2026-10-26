@@ -24,7 +24,7 @@ export interface LiveApi {
 
 const ACTION_NAMES = new Map<any, string>(Object.entries(A).map(([k, f]) => [f, k]));
 const CTX_KEY = 'archiflow.context.v1';
-const PUBLIC = new Set(['login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing']);
+const PUBLIC = new Set(['login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing', 'accessibility']);
 
 function readPathFromUrl(): string | null {
   try {

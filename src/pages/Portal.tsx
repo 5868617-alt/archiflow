@@ -23,7 +23,7 @@ export function PortalRouter() {
   const vis = clientVisible(db, me);
   const [pid, setPid] = useState(vis.projects.find((p) => p.status !== 'הושלם')?.id || vis.projects[0]?.id);
   const project = projectOf(db, pid);
-  if (!project) return <Empty title="אין פרויקטים פעילים">המשרד עדיין לא שיתף איתך פרויקט.</Empty>;
+  if (!project) return <Empty heading="h1" title="אין פרויקטים פעילים">המשרד עדיין לא שיתף איתך פרויקט.</Empty>;
   const page = segs[1] || '';
   return (
     <div className="stack-lg">
@@ -33,6 +33,8 @@ export function PortalRouter() {
       {page === 'drawings' ? <Drawings project={project} id={segs[2]} /> : null}
       {page === 'documents' ? <Docs project={project} /> : null}
       {page === 'meetings' ? <Meetings project={project} /> : null}
+      {page === 'messages' ? <h1 className="sr-only">שיחה עם המשרד</h1> : null}
+      {page === 'notifications' ? <h1 className="sr-only">התראות</h1> : null}
       {page === 'messages' ? <Card title={`שיחה עם ${db.office.name}`}><ChatThread projectId={project.id} viewerSide="client" /></Card> : null}
       {page === 'history' ? <History project={project} /> : null}
       {page === 'notifications' ? <Card title="התראות" pad={false}><NotificationList items={db.notifications.filter((n) => n.userId === me.id)} onGo={nav} /></Card> : null}
@@ -68,8 +70,8 @@ function Home({ project }: { project: T.Project }) {
           <div className="grow" style={{ minWidth: 240 }}>
             <div className="small" style={{ color: 'var(--on-navy-2)' }}>שלום {me.name.split(' ')[0]}, זה הפרויקט שלך</div>
             <h1 className="display" style={{ fontSize: 'var(--fs-3xl)', margin: '6px 0' }}>{project.name}</h1>
-            <div className="small" style={{ color: 'var(--on-navy-2)' }}>{project.address}, {project.city} · שלב נוכחי: <b style={{ color: 'var(--accent)' }}>{PHASES[project.phase]}</b></div>
-            <div className="phases mt16" style={{ maxWidth: 560 }}>{PHASES.map((ph, i) => <div key={ph} className={cx('phase', i < project.phase && 'done', i === project.phase && 'now')}><div className="bar" style={{ background: i < project.phase ? 'var(--ok)' : i === project.phase ? 'var(--accent)' : 'rgba(255,255,255,.15)' }} /><div className="ph-label" style={{ color: i === project.phase ? 'var(--accent)' : 'var(--on-navy-2)' }}>{ph}</div></div>)}</div>
+            <div className="small" style={{ color: 'var(--on-navy-2)' }}>{project.address}, {project.city} · שלב נוכחי: <b style={{ color: 'var(--accent-bright)' }}>{PHASES[project.phase]}</b></div>
+            <div className="phases mt16" style={{ maxWidth: 560 }}>{PHASES.map((ph, i) => <div key={ph} className={cx('phase', i < project.phase && 'done', i === project.phase && 'now')}><div className="bar" style={{ background: i < project.phase ? 'var(--ok)' : i === project.phase ? 'var(--accent)' : 'rgba(255,255,255,.15)' }} /><div className="ph-label" style={{ color: i === project.phase ? 'var(--accent-bright)' : 'var(--on-navy-2)' }}>{ph}</div></div>)}</div>
           </div>
           <div className="col t-center" style={{ alignItems: 'center' }}><Ring value={project.progress / 100} size={104} stroke={9} color="var(--accent)" /><span className="xs" style={{ color: 'var(--on-navy-2)' }}>התקדמות כללית</span></div>
         </div>
@@ -170,7 +172,7 @@ function Drawings({ project, id }: { project: T.Project; id?: string }) {
   const v = clientVisible(db, me);
   const plans = v.plans.filter((p) => p.projectId === project.id);
   const sel = id ? plans.find((p) => p.id === id) : undefined;
-  if (id && !sel) return <Callout kind="bad">השרטוט לא שותף איתך או שאינו קיים.</Callout>;
+  if (id && !sel) return <><h1 className="sr-only">שרטוט</h1><Callout kind="bad">השרטוט לא שותף איתך או שאינו קיים.</Callout></>;
   if (sel) {
     const lv = latestV(sel);
     const ok = ['PDF', 'JPG', 'PNG'].includes(lv.fileType) && lv.processing === 'מוכן';

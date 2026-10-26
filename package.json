@@ -14,7 +14,8 @@
     "test:e2e:gateway": "node tests/e2e/gateway.mjs",
     "test:e2e:crawl": "node tests/e2e/crawl.mjs",
     "test:e2e:flows": "node tests/e2e/flows.mjs",
-    "test:demo": "node tools/demo-crawl.mjs 400 && node tools/demo-flows.mjs"
+    "test:demo": "node tools/demo-crawl.mjs 400 && node tools/demo-flows.mjs",
+    "test:a11y": "node tools/a11y-audit.mjs 1366 && node tools/a11y-audit.mjs 400 && THEME=dark node tools/a11y-audit.mjs 1366"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

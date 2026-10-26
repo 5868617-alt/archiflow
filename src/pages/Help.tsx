@@ -62,7 +62,7 @@ export function HelpArticle({ id }: { id: string }) {
   const { db, nav, toast, live } = useStore();
   const a = ((db as any).helpArticles as any[]).find((x) => x.id === id);
   const [voted, setVoted] = useState(false);
-  if (!a) return <Empty title="המאמר לא נמצא" action={<Btn onClick={() => nav('/help')}>למרכז העזרה</Btn>} />;
+  if (!a) return <Empty heading="h1" title="המאמר לא נמצא" action={<Btn onClick={() => nav('/help')}>למרכז העזרה</Btn>} />;
   return (
     <div style={{ maxWidth: 820 }}>
       <PageHead crumbs={[{ label: 'מרכז העזרה', to: '/help' }, { label: a.category }]} title={a.title} sub={`${a.minutes} דקות קריאה`} />
@@ -112,7 +112,7 @@ function NewTicket({ onClose }: any) {
 export function TicketDetail({ id }: { id: string }) {
   const { db, nav, live } = useStore();
   const t = byId(db.tickets, id);
-  if (!t || t.officeId !== (IS_LIVE ? db.office.id : 'off_1')) return <Empty title="הפנייה לא נמצאה" action={<Btn onClick={() => nav('/support')}>לפניות</Btn>} />;
+  if (!t || t.officeId !== (IS_LIVE ? db.office.id : 'off_1')) return <Empty heading="h1" title="הפנייה לא נמצאה" action={<Btn onClick={() => nav('/support')}>לפניות</Btn>} />;
   return (
     <div style={{ maxWidth: 900 }}>
       <PageHead crumbs={[{ label: 'תמיכה', to: '/support' }, { label: t.number }]} title={t.subject} badge={<StatusBadge s={t.status} />} sub={`${t.category} · נפתחה ${ago(t.createdAt)}`} />

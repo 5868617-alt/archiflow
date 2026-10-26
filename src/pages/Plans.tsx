@@ -82,7 +82,7 @@ export function PlansLibrary({ query }: any) {
 
 function PlanCollection({ plans, view, hideProject }: any) {
   const { db, nav, live } = useStore();
-  if (!plans.length) return <div className="card"><Empty title="אין שרטוטים בסינון הזה">העלו שרטוט ראשון או נקו את הסינון.</Empty></div>;
+  if (!plans.length) return <div className="card"><Empty heading="h1" title="אין שרטוטים בסינון הזה">העלו שרטוט ראשון או נקו את הסינון.</Empty></div>;
   if (view === 'table') {
     return (
       <div className="card">
@@ -278,7 +278,7 @@ export function PlanViewer({ id, query }: { id: string; query: any }) {
   const [sendAp, setSendAp] = useState(false);
   const svgRef = useRef<any>(null);
   useEffect(() => { if (plan) setVer(latest(plan).v); }, [plan?.versions.length]);
-  if (!plan || !visibleProjectIds(db, me).has(plan.projectId)) return <Empty title="השרטוט לא נמצא או שאין גישה" action={<Btn onClick={() => nav('/plans')}>לספרייה</Btn>} />;
+  if (!plan || !visibleProjectIds(db, me).has(plan.projectId)) return <Empty heading="h1" title="השרטוט לא נמצא או שאין גישה" action={<Btn onClick={() => nav('/plans')}>לספרייה</Btn>} />;
   const v = plan.versions.find((x) => x.v === ver) || latest(plan);
   const isLatest = v.v === latest(plan).v;
   const renderable = RENDERABLE(v.fileType) && v.processing === 'מוכן';
@@ -312,14 +312,14 @@ export function PlanViewer({ id, query }: { id: string; query: any }) {
       <div className="pv">
         <div className="pv-stage">
           <div className="pv-toolbar" role="toolbar" aria-label="כלי שרטוט">
-            {tools.map((t) => <button key={t.id} type="button" className={cx('tool', tool === t.id && 'on')} onClick={() => { setTool(t.id); setMStart(null); }} aria-pressed={tool === t.id} title={t.label} disabled={!renderable && t.id !== 'select'}><t.icon aria-hidden /><span className="hide-sm">{t.label}</span></button>)}
+            {tools.map((t) => <button key={t.id} type="button" className={cx('tool', tool === t.id && 'on')} onClick={() => { setTool(t.id); setMStart(null); }} aria-pressed={tool === t.id} title={t.label} aria-label={t.label} disabled={!renderable && t.id !== 'select'}><t.icon aria-hidden /><span className="hide-sm">{t.label}</span></button>)}
             <span className="tool-sep" />
             <button type="button" className="tool" onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))} aria-label="הגדלה"><LuZoomIn aria-hidden /></button>
             <span className="small num" style={{ minWidth: 42, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
             <button type="button" className="tool" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} aria-label="הקטנה"><LuZoomOut aria-hidden /></button>
             <button type="button" className="tool" onClick={() => { setZoom(1); setOff({ x: 0, y: 0 }); }} aria-label="התאמה למסך"><LuMaximize aria-hidden /></button>
             <span className="tool-sep" />
-            <button type="button" className={cx('tool', showResolved && 'on')} onClick={() => setShowResolved((s) => !s)} aria-pressed={showResolved}>{showResolved ? <LuEye aria-hidden /> : <LuEyeOff aria-hidden />}<span className="hide-sm">שטופלו</span></button>
+            <button type="button" className={cx('tool', showResolved && 'on')} onClick={() => setShowResolved((s) => !s)} aria-pressed={showResolved} aria-label="הצגת הערות שטופלו" title="הצגת הערות שטופלו">{showResolved ? <LuEye aria-hidden /> : <LuEyeOff aria-hidden />}<span className="hide-sm">שטופלו</span></button>
           </div>
           <div className={cx('pv-canvas', tool === 'pan' ? 'mode-pan' : ['comment', 'issue', 'measure'].includes(tool) ? 'mode-add' : '', drag && 'dragging')}
             onMouseDown={(e) => { if (tool === 'pan') setDrag({ x: e.clientX - off.x, y: e.clientY - off.y }); }}
@@ -530,7 +530,7 @@ export function PlanCompare({ id }: { id: string }) {
   const [b, setB] = useState(() => (plan ? latest(plan).v : 1));
   const [mode, setMode] = useState('side');
   const [opacity, setOpacity] = useState(50);
-  if (!plan) return <Empty title="השרטוט לא נמצא" />;
+  if (!plan) return <Empty heading="h1" title="השרטוט לא נמצא" />;
   if (!hasFeature(db, 'plans_compare')) return <LockedFeature feature="plans_compare" />;
   const va = plan.versions.find((x) => x.v === a)!; const vb = plan.versions.find((x) => x.v === b)!;
   const can = (v: T.PlanVersion) => RENDERABLE(v.fileType) && v.processing === 'מוכן';

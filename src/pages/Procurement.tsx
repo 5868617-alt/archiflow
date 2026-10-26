@@ -79,7 +79,7 @@ export function SupplierDetail({ id }: { id: string }) {
   const { db, me, nav, live } = useStore();
   const s = byId(db.suppliers, id);
   const [edit, setEdit] = useState(false);
-  if (!s) return <Empty title="הספק לא נמצא" action={<Btn onClick={() => nav('/suppliers')}>לרשימה</Btn>} />;
+  if (!s) return <Empty heading="h1" title="הספק לא נמצא" action={<Btn onClick={() => nav('/suppliers')}>לרשימה</Btn>} />;
   const pids = visibleProjectIds(db, me);
   const pos = db.purchaseOrders.filter((o) => o.supplierId === id && pids.has(o.projectId));
   const specs = db.specItems.filter((x) => x.supplierId === id && pids.has(x.projectId));
@@ -250,7 +250,7 @@ export function PODetail({ id }: { id: string }) {
   const [edit, setEdit] = useState(false);
   const [expense, setExpense] = useState(false);
   const [cancel, setCancel] = useState(false);
-  if (!po || !visibleProjectIds(db, me).has(po.projectId)) return <Empty title="ההזמנה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/procurement')}>לרשימה</Btn>} />;
+  if (!po || !visibleProjectIds(db, me).has(po.projectId)) return <Empty heading="h1" title="ההזמנה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/procurement')}>לרשימה</Btn>} />;
   const sup = supplierOf(db, po.supplierId)!;
   const total = poTotal(po); const exps = db.expenses.filter((e) => e.poId === id); const paid = exps.reduce((a, e) => a + e.amount, 0);
   const fin = canSeeFinance(db, me);

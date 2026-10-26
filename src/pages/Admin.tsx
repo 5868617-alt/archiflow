@@ -31,7 +31,7 @@ export function AdminRouter() {
     case 'audit': return <Audit />;
     case 'retention': return <Retention />;
     case 'settings': return <PlatformSettings />;
-    default: return <Empty title="הדף לא נמצא" />;
+    default: return <Empty heading="h1" title="הדף לא נמצא" />;
   }
 }
 
@@ -122,7 +122,7 @@ function OfficeDetail({ id }: { id: string }) {
   const { db, run, toast, nav, live } = useStore();
   const o = byId(db.platformOffices, id);
   const [st, setSt] = useState<string | null>(null);
-  if (!o) return <Empty title="המשרד לא נמצא" />;
+  if (!o) return <Empty heading="h1" title="המשרד לא נמצא" />;
   const isDemoOffice = id === 'off_1';
   const users = IS_LIVE ? db.users.filter((u) => u.officeId === id) : isDemoOffice ? db.users.filter((u) => u.officeId) : [];
   return (
@@ -183,7 +183,7 @@ function Users() {
 function UserDetail({ id }: { id: string }) {
   const { db, nav, toast, live } = useStore();
   const u = allPlatformUsers(db).find((x: any) => x.id === id);
-  if (!u) return <Empty title="המשתמש לא נמצא" />;
+  if (!u) return <Empty heading="h1" title="המשתמש לא נמצא" />;
   return (
     <div style={{ maxWidth: 820 }}>
       <PageHead crumbs={[{ label: 'משתמשים', to: '/admin/users' }, { label: u.name }]} title={u.name} badge={<StatusBadge s={u.status} />} />
@@ -312,7 +312,7 @@ export function TicketConversation({ t, side }: { t: T.Ticket; side: 'user' | 's
 function AdminTicket({ id }: { id: string }) {
   const { db, run, toast, live } = useStore();
   const t = byId(db.tickets, id);
-  if (!t) return <Empty title="הפנייה לא נמצאה" />;
+  if (!t) return <Empty heading="h1" title="הפנייה לא נמצאה" />;
   return (
     <div>
       <PageHead crumbs={[{ label: 'פניות תמיכה', to: '/admin/tickets' }, { label: t.number }]} title={t.subject} badge={<StatusBadge s={t.status} />} sub={`${byId(db.platformOffices, t.officeId)?.name} · ${t.category}`} />

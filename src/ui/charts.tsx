@@ -11,7 +11,7 @@ export function BudgetBars({ rows, warn = 0.9 }: { rows: { label: string; planne
         const tone = p > 1 ? 'var(--bad)' : p >= warn ? 'var(--warn)' : 'var(--navy-3)';
         return (
           <div key={r.label}>
-            <div className="meter-label"><span className="bold">{r.label}</span><span className="num soft">{ils(r.actual)} <span className="muted">/ {ils(r.planned)}</span> · <b style={{ color: tone }}>{pct(p)}</b></span></div>
+            <div className="meter-label"><span className="bold">{r.label}</span><span className="num soft">{ils(r.actual)} <span className="muted">/ {ils(r.planned)}</span> · <b style={{ color: p > 1 ? 'var(--bad)' : p >= warn ? 'var(--warn)' : 'var(--ink)' }}>{pct(p)}</b></span></div>
             <div style={{ position: 'relative', height: 12, background: 'var(--surface-3)', borderRadius: 6, overflow: 'hidden' }} role="img" aria-label={`${r.label}: ${pct(p)} נוצל`}>
               <div style={{ position: 'absolute', insetInlineStart: 0, top: 0, bottom: 0, width: `${Math.min(100, p * 100)}%`, background: tone, borderRadius: 6 }} />
               {c > 0 ? <div style={{ position: 'absolute', insetInlineStart: `${Math.min(100, p * 100)}%`, top: 0, bottom: 0, width: `${Math.min(100 - Math.min(100, p * 100), c * 100)}%`, background: 'repeating-linear-gradient(45deg, var(--accent) 0 4px, var(--accent-soft) 4px 8px)' }} /> : null}

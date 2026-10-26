@@ -28,13 +28,14 @@ import { BillingPage, InvoiceDetail, PricingPage, ChangePlan, CancelFlow } from 
 import { HelpCenter, HelpArticle, SupportPage, TicketDetail } from './pages/Help';
 import { PortalRouter } from './pages/Portal';
 import { AdminRouter } from './pages/Admin';
+import { AccessibilityStatement } from './pages/AccessibilityStatement';
 import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired } from './live/AuthLive';
 
 function Denied({ text }: any) {
   const { me, nav, live } = useStore();
   return (
     <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}>
-      <Empty icon={LuShieldAlert} title="אין לך הרשאה למסך הזה" action={<Btn kind="primary" onClick={() => nav(defaultPathFor(me))}>חזרה למסך הבית שלי</Btn>}>
+      <Empty heading="h1" icon={LuShieldAlert} title="אין לך הרשאה למסך הזה" action={<Btn kind="primary" onClick={() => nav(defaultPathFor(me))}>חזרה למסך הבית שלי</Btn>}>
         {text || 'המסך מוגבל לתפקיד אחר.'} {live ? 'ההרשאות נאכפות גם בשרת.' : 'בדמו ההגבלה מוצגת בצד הדפדפן בלבד; בייצור היא תיאכף בשרת.'}
       </Empty>
     </div>
@@ -42,7 +43,7 @@ function Denied({ text }: any) {
 }
 function NotFound() {
   const { me, nav } = useStore();
-  return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty title="הדף לא נמצא" action={<Btn onClick={() => nav(defaultPathFor(me))}>למסך הבית</Btn>}>ייתכן שהרשומה נמחקה או שהקישור שגוי.</Empty></div>;
+  return <div className="card" style={{ maxWidth: 560, margin: '40px auto' }}><Empty heading="h1" title="הדף לא נמצא" action={<Btn onClick={() => nav(defaultPathFor(me))}>למסך הבית</Btn>}>ייתכן שהרשומה נמחקה או שהקישור שגוי.</Empty></div>;
 }
 
 function OfficeRoutes() {
@@ -90,6 +91,7 @@ export function App() {
   const { me, path, live } = useStore();
   const { segs } = parseRoute(path);
   const a = segs[0];
+  if (a === 'accessibility') return <PublicShell><AccessibilityStatement /></PublicShell>;
   if (live) {
     if (a === 'accept-invite') return <PublicShell plain><LiveAcceptInvite /></PublicShell>;
     if (a === 'reset-password') return <PublicShell plain><LiveResetPassword /></PublicShell>;

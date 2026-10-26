@@ -229,7 +229,7 @@ export function MeetingDetail({ id }: { id: string }) {
   const [summary, setSummary] = useState(m?.summary || '');
   const [task, setTask] = useState(false);
   useEffect(() => setSummary(m?.summary || ''), [m?.id]);
-  if (!m || (m.projectId && !visibleProjectIds(db, me).has(m.projectId))) return <Empty title="הפגישה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/calendar')}>ליומן</Btn>} />;
+  if (!m || (m.projectId && !visibleProjectIds(db, me).has(m.projectId))) return <Empty heading="h1" title="הפגישה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/calendar')}>ליומן</Btn>} />;
   const followUps = db.tasks.filter((t) => m.followUpTaskIds.includes(t.id) || (t.source?.kind === 'meeting' && t.source.id === m.id));
   const past = m.date < todayISO;
   return (

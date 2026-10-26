@@ -172,7 +172,7 @@ export function ChangePlan({ query }: any) {
   const [planId, setPlanId] = useState<'starter' | 'pro'>(query.plan === 'starter' || query.plan === 'pro' ? query.plan : sub.planId === 'pro' ? 'starter' : 'pro');
   const [cycle, setCycle] = useState<'חודשי' | 'שנתי'>(query.cycle === 'שנתי' ? 'שנתי' : sub.cycle);
   const [step, setStep] = useState(1);
-  if (!can) return <Empty title="רק בעלי המשרד יכולים לשנות מסלול" action={<Btn onClick={() => nav('/billing')}>חזרה</Btn>} />;
+  if (!can) return <Empty heading="h1" title="רק בעלי המשרד יכולים לשנות מסלול" action={<Btn onClick={() => nav('/billing')}>חזרה</Btn>} />;
   const from = currentPlan(db); const to = db.subscriptionPlans.find((p) => p.id === planId)!;
   const upgrade = from.id === 'starter' && to.id === 'pro';
   const same = from.id === to.id && cycle === sub.cycle;
@@ -233,7 +233,7 @@ export function CancelFlow() {
   const [note, setNote] = useState('');
   const [ack, setAck] = useState(false);
   const [err, setErr] = useState('');
-  if (!canManageBilling(db, me)) return <Empty title="רק בעלי המשרד יכולים לבטל" />;
+  if (!canManageBilling(db, me)) return <Empty heading="h1" title="רק בעלי המשרד יכולים לבטל" />;
   return (
     <div style={{ maxWidth: 720 }}>
       <PageHead crumbs={[{ label: 'מנוי וחיוב', to: '/billing' }, { label: 'ביטול מנוי' }]} title="ביטול מנוי" badge={<DemoTag />} />
@@ -264,7 +264,7 @@ export function CancelFlow() {
 export function InvoiceDetail({ id }: { id: string }) {
   const { db, nav, live } = useStore();
   const inv = byId(db.invoices, id);
-  if (!inv) return <Empty title="החשבונית לא נמצאה" action={<Btn onClick={() => nav('/billing')}>חזרה</Btn>} />;
+  if (!inv) return <Empty heading="h1" title="החשבונית לא נמצאה" action={<Btn onClick={() => nav('/billing')}>חזרה</Btn>} />;
   const o = db.office;
   return (
     <div>

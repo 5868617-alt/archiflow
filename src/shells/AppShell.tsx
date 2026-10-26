@@ -7,6 +7,7 @@ import { todayISO } from '../data/dates';
 import { Btn, Menu, MenuItem, cx, IconBtn } from '../ui/core';
 import { Logo } from '../ui/charts';
 import { DemoStrip, NotificationBell, RoleSwitcher, ThemeToggle, Toasts } from './common';
+import { AccessibilityMenu } from './A11y';
 import { CommandPalette, SearchTrigger, ShortcutsHelp, useCommandPalette } from './Palette';
 import { parseRoute } from '../lib/route';
 import { SubBanner } from '../pages/Billing';
@@ -65,6 +66,7 @@ export function AppShell({ children }: any) {
   const pal = useCommandPalette();
   return (
     <div className="shell">
+      <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); const m = document.getElementById('main'); m?.setAttribute('tabindex', '-1'); m?.focus(); }}>דילוג לתוכן</a>
       <aside className={cx('sidebar', open && 'open')} aria-label="ניווט ראשי">
         <div className="sb-brand"><Logo /><span className="sb-name">Archi<span>Flow</span></span></div>
         <button type="button" className="sb-office clickable" style={{ textAlign: 'right', color: 'inherit', font: 'inherit', display: 'block', width: 'calc(100% - 24px)' }} onClick={() => go('/settings')}>
@@ -94,6 +96,7 @@ export function AppShell({ children }: any) {
           <SearchTrigger onOpen={() => pal.setOpen(true)} />
           <div className="tb-actions">
             <QuickCreate />
+            <AccessibilityMenu />
             <ThemeToggle />
             <NotificationBell />
             <RoleSwitcher />

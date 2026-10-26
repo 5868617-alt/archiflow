@@ -88,7 +88,7 @@ export function ClientDetail({ id }: { id: string }) {
   const c = db.clients.find((x) => x.id === id);
   const [tab, setTab] = useState('projects');
   const [edit, setEdit] = useState(false);
-  if (!c) return <Empty title="הלקוח לא נמצא" action={<Btn onClick={() => nav('/clients')}>לרשימה</Btn>} />;
+  if (!c) return <Empty heading="h1" title="הלקוח לא נמצא" action={<Btn onClick={() => nav('/clients')}>לרשימה</Btn>} />;
   const projs = db.projects.filter((p) => p.clientId === id);
   const pids = new Set(projs.map((p) => p.id));
   const docs = db.documents.filter((d) => d.projectId && pids.has(d.projectId) && d.sharedWithClient);

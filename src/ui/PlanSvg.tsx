@@ -363,10 +363,6 @@ export function PlanSvg({ layout, meta, className, children, style, rev = 99, sv
   }
   return (
     <svg ref={svgRef} onClick={onClick} onMouseMove={onMouseMove} viewBox="0 0 1000 720" className={className} style={{ display: 'block', width: '100%', height: 'auto', background: PAPER, ...style }} role="img" aria-label="תצוגת שרטוט (איור הדגמה)">
-      <defs>
-        <Hatch id="hatch" />
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke={BP} strokeWidth="0.3" opacity="0.35" /></pattern>
-      </defs>
       <rect width="1000" height="720" fill="url(#grid)" />
       {body}
       <TitleBlock meta={meta} />
@@ -380,10 +376,22 @@ export function NoPreview({ fileType, processing }: any) {
   return (
     <svg viewBox="0 0 1000 720" style={{ display: 'block', width: '100%', height: 'auto', background: 'var(--surface-2)' }} role="img" aria-label="אין תצוגה מקדימה">
       <rect width="1000" height="720" fill="url(#gridnp)" />
-      <defs><pattern id="gridnp" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-strong)" strokeWidth="1" /></pattern></defs>
       <rect x={380} y={230} width={240} height={200} rx={10} fill="var(--surface)" stroke="var(--line-strong)" />
       <text x={500} y={330} textAnchor="middle" fontSize={44} fontWeight={700} fill="var(--ink-3)" fontFamily="var(--font-mono)">{fileType}</text>
       <text x={500} y={385} textAnchor="middle" fontSize={20} fill="var(--ink-3)" fontFamily="var(--font-body)">{processing === 'נכשל' ? 'העיבוד נכשל' : (globalThis as any).__AF_LIVE ? 'אין תצוגה מקדימה בדפדפן' : 'אין תצוגה מקדימה בדמו'}</text>
+    </svg>
+  );
+}
+
+// Patterns shared by every drawing, defined once per page (ids must be unique in the document).
+export function PlanDefs() {
+  return (
+    <svg width="0" height="0" style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden focusable="false">
+      <defs>
+        <Hatch id="hatch" />
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke={BP} strokeWidth="0.3" opacity="0.35" /></pattern>
+        <pattern id="gridnp" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--line-strong)" strokeWidth="1" /></pattern>
+      </defs>
     </svg>
   );
 }
