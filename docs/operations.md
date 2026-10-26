@@ -6,10 +6,11 @@
 |---|---|
 | פרויקט Supabase | ArchiFlow, `qbwaqngxdgmqgddxcuzv`. כל 11 המיגרציות הותקנו |
 | נתונים | ריק, מלבד מסלולים, יכולות ומדיניות שמירה |
+| Vault `archiflow_app_url` | מוגדר לכתובת האתר |
 | Super Admin ראשון | `shirameren2434@gmail.com` – ממתין להרשמה ולאימות מייל |
 | משימות מתוזמנות | `archiflow-hourly`, `archiflow-daily`, `archiflow-emails` פעילות |
 | Edge Function `send-emails` | פרוסה. לא שולחת כלום עד שמגדירים `RESEND_API_KEY` |
-| אתר | `site/index.html` בנוי. ממתין לחיבור ל-Vercel |
+| אתר | https://archiflow-topaz.vercel.app (Vercel, פרויקט `archiflow`, מתפרסם אוטומטית מ-`main`) |
 
 ## 1. Vercel
 1. ב-vercel.com/new: Import לריפו `5868617-alt/archiflow`.
