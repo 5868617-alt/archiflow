@@ -109,5 +109,10 @@ ${bodyHtml}${TEST ? '' : `<script>if('serviceWorker' in navigator&&location.prot
   console.log('test build ok', (js.length / 1024).toFixed(0) + 'KB js');
 } else {
   fs.writeFileSync(path.join(root, 'dist/archiflow.html'), head + '\n' + bodyHtml);
+  // public demo next to the live site (/demo): the same app with sample data kept in the visitor's browser
+  fs.writeFileSync(path.join(root, 'dist/demo.html'), `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="הדגמה של ArchiFlow עם נתונים לדוגמה – ניהול פרויקטים למשרדי אדריכלות ועיצוב פנים">
+<meta name="theme-color" content="#3D2233"><link rel="icon" href="/icon.svg" type="image/svg+xml">
+${head.replace('<title>ArchiFlow</title>', '<title>ArchiFlow – הדגמה</title>')}</head><body>${bodyHtml}</body></html>`);
   console.log('prod build ok', (fs.statSync(path.join(root, 'dist/archiflow.html')).size / 1024).toFixed(0) + 'KB');
 }

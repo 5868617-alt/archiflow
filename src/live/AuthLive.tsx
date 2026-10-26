@@ -1,6 +1,6 @@
 // Real sign-in, sign-up, password recovery, invitation acceptance and office creation.
 import { useEffect, useState } from 'react';
-import { LuLogIn, LuMail, LuArrowRight, LuCheck, LuPlus, LuX, LuMailCheck, LuKeyRound, LuBuilding2, LuLogOut } from 'react-icons/lu';
+import { LuSparkles, LuArrowLeft, LuLogIn, LuMail, LuArrowRight, LuCheck, LuPlus, LuX, LuMailCheck, LuKeyRound, LuBuilding2, LuLogOut } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { Btn, Field, Input, Select, Callout, Check, cx, Segmented } from '../ui/core';
 import { Logo } from '../ui/charts';
@@ -40,6 +40,13 @@ export function LiveLogin() {
         <Btn kind="primary" size="lg" block type="submit" icon={busy ? undefined : LuLogIn} disabled={busy}>{busy ? <><Spin />מתחבר…</> : 'כניסה'}</Btn>
         <div className="small t-center">אין חשבון? <button type="button" className="linkish" onClick={() => nav('/register')}>{pendingInvite() ? 'הרשמה' : 'פתיחת משרד חדש'}</button></div>
       </form>
+      {pendingInvite() ? null : (
+        <a className="demo-cta" href="/demo">
+          <span className="demo-cta-ic" aria-hidden><LuSparkles /></span>
+          <span className="grow"><b>רוצים להתרשם קודם?</b><span className="small soft">הדגמה מלאה עם משרד, פרויקטים ולקוחות לדוגמה. בלי הרשמה.</span></span>
+          <LuArrowLeft aria-hidden />
+        </a>
+      )}
     </AuthLayout>
   );
 }

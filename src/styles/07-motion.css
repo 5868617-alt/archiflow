@@ -95,3 +95,12 @@ html[data-still] .hero::before, html[data-still] .hero::after, html[data-still] 
 html[data-hc] .hero::before, html[data-hc] .hero::after, html[data-hc] .auth-art::before, html[data-hc] .auth-art::after { display: none; }
 html[data-hc] .hero-title, html[data-hc] .sb-name span { background: none; color: inherit !important; }
 html[data-hc] .btn.primary { background: #000 !important; color: #fff !important; }
+
+/* ---------- invitation to the demo (live sign-in) and back to the real site (demo strip) ---------- */
+.demo-cta { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; text-decoration: none; color: var(--ink); background: linear-gradient(120deg, color-mix(in srgb, #EFB0A1 22%, var(--surface)), color-mix(in srgb, #D9A5C9 20%, var(--surface))); border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line)); transition: transform .2s var(--ease), box-shadow .2s; }
+.demo-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -14px rgba(var(--accent-rgb), .9); }
+.demo-cta .grow { display: flex; flex-direction: column; }
+.demo-cta-ic { width: 40px; height: 40px; border-radius: 12px; background: var(--grad); display: grid; place-items: center; flex: 0 0 40px; color: var(--accent-ink); }
+.demo-cta-ic svg { width: 20px; height: 20px; }
+.demo-cta > svg { width: 18px; height: 18px; color: var(--accent-strong); }
+.demo-strip-cta { margin-inline-start: auto; font-weight: 700; color: var(--accent-strong); text-decoration: underline; text-underline-offset: 3px; }

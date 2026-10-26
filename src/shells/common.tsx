@@ -83,6 +83,7 @@ export function DemoStrip() {
   return (
     <div className="demo-strip" role="note">
       <span><b>סביבת הדגמה.</b> כל הנתונים בדויים ונשמרים רק בדפדפן הזה. אין התחברות אמיתית, אין חיובים ואין שליחת מיילים.</span>
+      {location.protocol === 'https:' ? <a className="demo-strip-cta" href="/#/register">לפתיחת חשבון אמיתי</a> : null}
       {confirm ? (
         <span className="row g8"><span>לאפס את כל השינויים?</span><button type="button" className="linkish" onClick={() => { reset(); setConfirm(false); }}>כן, אפס</button><button type="button" className="linkish" onClick={() => setConfirm(false)}>לא</button></span>
       ) : (

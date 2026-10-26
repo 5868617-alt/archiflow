@@ -1,6 +1,6 @@
 # ArchiFlow
 
-**האתר:** https://archiflow-topaz.vercel.app
+**האתר:** https://archiflow-topaz.vercel.app · **הדגמה עם נתונים לדוגמה:** https://archiflow-topaz.vercel.app/demo
 
 מערכת לניהול משרדי אדריכלות ועיצוב פנים: פרויקטים, לקוחות, שרטוטים, מפרטים, רכש, תקציב ביצוע, שכר טרחה, אישורי לקוח ופורטל לקוח.
 הממשק כולו בעברית ומימין לשמאל.
