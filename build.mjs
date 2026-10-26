@@ -22,8 +22,17 @@ const shimPlugin = {
     } else {
       build.onResolve({ filter: /^react$/ }, () => ({ path: 'react', namespace: 'shim' }));
       build.onResolve({ filter: /^react-dom(\/client)?$/ }, () => ({ path: 'react-dom', namespace: 'shim' }));
+      // packages compiled with the automatic JSX runtime (react/jsx-runtime) must use the page's React 18 too,
+      // otherwise they create React 19 elements that React 18 cannot render (minified error #31)
+      build.onResolve({ filter: /^react\/jsx(-dev)?-runtime$/ }, () => ({ path: 'jsx-runtime', namespace: 'shim' }));
       build.onLoad({ filter: /.*/, namespace: 'shim' }, (a) => ({
-        contents: a.path === 'react' ? 'module.exports = window.React;' : 'module.exports = window.ReactDOM;',
+        contents: a.path === 'react' ? 'module.exports = window.React;'
+          : a.path === 'jsx-runtime'
+            ? `var R = window.React;
+function jsx(type, props, key) { var p = {}; for (var k in props) if (k !== 'children') p[k] = props[k]; if (key !== undefined) p.key = key;
+  var c = props && props.children; return c === undefined ? R.createElement(type, p) : Array.isArray(c) ? R.createElement.apply(null, [type, p].concat(c)) : R.createElement(type, p, c); }
+module.exports = { jsx: jsx, jsxs: jsx, jsxDEV: jsx, Fragment: R.Fragment };`
+            : 'module.exports = window.ReactDOM;',
         loader: 'js',
       }));
     }
