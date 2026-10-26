@@ -85,7 +85,7 @@ if (LIVE) {
 <link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 ${head}</head><body>
 <script>window.__AF_LIVE=true;${cfg}</script>
-${bodyHtml}${TEST ? '' : `<script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>`}</body></html>`;
+${bodyHtml}${TEST ? '' : `<script>if('serviceWorker' in navigator&&location.protocol==='https:'){var hadSw=!!navigator.serviceWorker.controller,swReloaded=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(hadSw&&!swReloaded){swReloaded=true;location.reload()}});addEventListener('load',function(){navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).then(function(r){r.update()}).catch(function(){})})}</script>`}</body></html>`;
   const out = path.join(root, TEST ? 'dist/live-test' : 'dist/live');
   fs.mkdirSync(out, { recursive: true });
   for (const f of fs.readdirSync(path.join(root, 'public'))) {
