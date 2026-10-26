@@ -1,13 +1,16 @@
 import { IS_LIVE } from '../data/dates';
 import { useState, useEffect } from 'react';
-import { LuLayoutGrid, LuTable, LuPlus, LuMapPin, LuCalendarClock, LuFolderKanban } from 'react-icons/lu';
+import { LuLayoutGrid, LuTable, LuPlus, LuMapPin, LuCalendarClock, LuFolderKanban, LuColumns3 } from 'react-icons/lu';
+import { usePointerDrag } from '../ui/drag';
+import { canChangeProjectStatus } from '../data/api';
 import { useStore } from '../data/store';
 import { visibleProjects, clientOf, userName, A, uid, canSeeFinance, projectFinance, isOverdue } from '../data/api';
 import { PROJECT_STATUSES, PHASES } from '../data/types';
 import type * as T from '../data/types';
 import { todayISO, D } from '../data/dates';
+import { cx } from '../ui/core';
 import { PageHead, Btn, Chips, SearchBox, Select, Segmented, DataTable, StatusBadge, Progress, AvatarStack, Modal, Field, Input, Textarea, Empty, Callout, useFakeLoad, Skeleton } from '../ui/core';
-import { ProjectCover, PersonCell, DeadlineChip } from './shared';
+import { ProjectCover, PersonCell, DeadlineChip, StatusChangeModal } from './shared';
 import { ils, ilsShort, date } from '../lib/format';
 
 export function ProjectsList({ query }: any) {
@@ -17,7 +20,8 @@ export function ProjectsList({ query }: any) {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState(query.status || 'active');
   const [lead, setLead] = useState('');
-  const [view, setView] = useState<'grid' | 'table'>('grid');
+  const [view, setView] = useState<'grid' | 'table' | 'board'>(() => { try { return (localStorage.getItem('archiflow.projects.view') as any) || 'grid'; } catch { return 'grid'; } });
+  useEffect(() => { try { localStorage.setItem('archiflow.projects.view', view); } catch { /* storage unavailable */ } }, [view]);
   const [sort, setSort] = useState('updated');
   const [editing, setEditing] = useState<T.Project | null>(null);
   const [creating, setCreating] = useState(!!query.new);
@@ -41,12 +45,14 @@ export function ProjectsList({ query }: any) {
         <Select value={lead} onChange={(e: any) => setLead(e.target.value)} options={leads.map((id) => ({ value: id, label: userName(db, id) }))} placeholder="כל האחראים" aria-label="סינון לפי אחראי" />
         <Select value={sort} onChange={(e: any) => setSort(e.target.value)} options={[{ value: 'updated', label: 'מיון: עודכן לאחרונה' }, { value: 'due', label: 'מיון: תאריך יעד' }, { value: 'name', label: 'מיון: שם' }, { value: 'progress', label: 'מיון: התקדמות' }]} aria-label="מיון" />
         <div className="grow" />
-        <Segmented value={view} onChange={setView} options={[{ value: 'grid', label: 'כרטיסים', icon: LuLayoutGrid }, { value: 'table', label: 'טבלה', icon: LuTable }]} />
+        <Segmented value={view} onChange={setView} options={[{ value: 'grid', label: 'כרטיסים', icon: LuLayoutGrid }, { value: 'board', label: 'לוח', icon: LuColumns3 }, { value: 'table', label: 'טבלה', icon: LuTable }]} />
       </div>
-      <div style={{ marginBottom: 16 }}><Chips options={statusOpts} value={status} onChange={setStatus} /></div>
+      {view !== 'board' ? <div style={{ marginBottom: 16 }}><Chips options={statusOpts} value={status} onChange={setStatus} /></div> : null}
 
       {loading ? <div className="card"><Skeleton rows={5} /></div> : list.length === 0 ? (
         <div className="card"><Empty icon={LuFolderKanban} title="לא נמצאו פרויקטים" action={<Btn onClick={() => { setQ(''); setStatus('all'); setLead(''); }}>ניקוי סינון</Btn>}>אין פרויקטים שתואמים לסינון הנוכחי.</Empty></div>
+      ) : view === 'board' ? (
+        <ProjectBoard projects={all.filter((p) => (!lead || p.leadId === lead) && (!q.trim() || p.name.includes(q.trim()) || p.code.includes(q.trim()) || p.city.includes(q.trim())))} />
       ) : view === 'grid' ? (
         <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))' }}>
           {list.map((p) => {
@@ -54,10 +60,10 @@ export function ProjectsList({ query }: any) {
             const late = db.tasks.filter((t) => t.projectId === p.id && isOverdue(t)).length;
             const f = fin ? projectFinance(db, p.id) : null;
             return (
-              <article key={p.id} className="card link" onClick={() => nav(`/projects/${p.id}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && nav(`/projects/${p.id}`)} aria-label={p.name}>
-                <ProjectCover project={p} height={110} />
+              <article key={p.id} className="card link pcard" onClick={() => nav(`/projects/${p.id}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && nav(`/projects/${p.id}`)} aria-label={p.name}>
+                <ProjectCover project={p} height={128}><StatusBadge s={p.status} className="pc-status" /></ProjectCover>
                 <div className="card-body col g12">
-                  <div className="row between g8 wrap"><StatusBadge s={p.status} />{late ? <span className="badge bad">{late} באיחור</span> : null}</div>
+                  {late ? <div className="row g8 wrap"><span className="badge bad">{late} משימות באיחור</span></div> : null}
                   <div>
                     <div className="lg bold">{p.name}</div>
                     <div className="small muted row g4"><LuMapPin aria-hidden style={{ width: 13, height: 13 }} />{p.city} · {clientOf(db, p.clientId)?.name}</div>
@@ -138,5 +144,40 @@ export function ProjectForm({ project, onClose }: { project?: T.Project; onClose
       </div>
       {isNew ? <div className="mt16"><Callout kind="info">לאחר היצירה אפשר להחיל תבנית עבודה (למשל "פתיחת פרויקט מגורים") מלשונית המשימות.</Callout></div> : null}
     </Modal>
+  );
+}
+
+// board by the nine fixed statuses; dropping a card opens the status-change confirmation (never a silent change)
+function ProjectBoard({ projects }: { projects: T.Project[] }) {
+  const { db, me, nav } = useStore();
+  const can = canChangeProjectStatus(me);
+  const [pending, setPending] = useState<{ p: T.Project; s: T.ProjectStatus } | null>(null);
+  const dnd = usePointerDrag({ canDrag: () => can, onDrop: (id, s) => { const p = projects.find((x) => x.id === id); if (p && p.status !== s) setPending({ p, s: s as T.ProjectStatus }); } });
+  return (
+    <>
+      {can ? <p className="small muted" style={{ margin: '-4px 0 12px' }}>גררו פרויקט לעמודה אחרת כדי לשנות סטטוס. לפני כל שינוי תופיע בקשת אישור.</p> : null}
+      <div className="kanban project-board" aria-label="לוח פרויקטים לפי סטטוס">
+        {PROJECT_STATUSES.map((s) => {
+          const col = projects.filter((p) => p.status === s);
+          return (
+            <div key={s} className={cx('k-col', dnd.over === s && dnd.dragId && 'drop')} data-drop={s}>
+              <div className="k-head"><StatusBadge s={s} /><span className="xs muted num">{col.length}</span></div>
+              <div className="k-list">
+                {col.length === 0 ? <div className="k-empty xs muted t-center">{can ? 'גררו לכאן פרויקט' : 'אין פרויקטים'}</div> : null}
+                {col.map((p) => (
+                  <div key={p.id} className={cx('k-card', dnd.dragId === p.id && 'dragging')} {...dnd.handle(p.id)} onClick={() => nav(`/projects/${p.id}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && nav(`/projects/${p.id}`)}>
+                    <div className="row between g8"><span className="small bold ellipsis">{p.name}</span><span className="code">{p.code}</span></div>
+                    <div className="xs muted ellipsis">{clientOf(db, p.clientId)?.name} · {p.city}</div>
+                    <div className="row g8"><Progress value={p.progress / 100} tone={p.status === 'הושלם' ? 'ok' : 'accent'} /><span className="xs num muted">{p.progress}%</span></div>
+                    {can ? <select className="select sm show-sm" value={p.status} onClick={(e) => e.stopPropagation()} onChange={(e) => setPending({ p, s: e.target.value as T.ProjectStatus })} aria-label="שינוי סטטוס">{PROJECT_STATUSES.map((x) => <option key={x}>{x}</option>)}</select> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {pending ? <StatusChangeModal project={pending.p} next={pending.s} onClose={() => setPending(null)} /> : null}
+    </>
   );
 }

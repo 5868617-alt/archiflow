@@ -1,15 +1,14 @@
 import { IS_LIVE } from '../data/dates';
-import { LuListChecks, LuClock, LuCalendarDays, LuBadgeCheck, LuWallet, LuPlus, LuUpload, LuReceipt, LuCalendarPlus, LuSend, LuArrowLeft, LuFolderKanban, LuTriangleAlert } from 'react-icons/lu';
+import { LuListChecks, LuClock, LuCalendarDays, LuBadgeCheck, LuWallet, LuPlus, LuUpload, LuReceipt, LuCalendarPlus, LuSend, LuArrowLeft, LuFolderKanban, LuTriangleAlert, LuCoins } from 'react-icons/lu';
 import { useStore } from '../data/store';
-import { visibleProjects, visibleProjectIds, isOverdue, isToday, projectAlerts, canSeeFinance, projectFinance, budgetHealth, contactOf, projectOf } from '../data/api';
+import { hasFeature, visibleProjects, visibleProjectIds, isOverdue, isToday, projectAlerts, canSeeFinance, projectFinance, budgetHealth, contactOf, projectOf } from '../data/api';
 import { DEMO_TODAY, todayISO, daysFromToday } from '../data/dates';
 import { PROJECT_STATUSES } from '../data/types';
-import { Card, Stat, Btn, Badge, StatusBadge, Empty, AssumeTag, Progress, cx } from '../ui/core';
-import { Donut } from '../ui/charts';
+import { Card, Btn, Badge, StatusBadge, Empty, AssumeTag, Progress, cx, STATUS_COLORS } from '../ui/core';
+import { Donut, Columns, ProjectTimeline } from '../ui/charts';
 import { TaskLine, ActivityFeed, MeetingLine } from './shared';
 import { DOW, monthName, ils, pct, relDay } from '../lib/format';
 
-const STATUS_COLORS: Record<string, string> = { 'ליד חדש': 'var(--violet)', 'תכנון ראשוני': '#7FA3D6', 'תכנון בפיתוח': 'var(--info)', 'ממתין לאישור': 'var(--warn)', 'תכנון מאושר': '#5DAF86', 'ביצוע': 'var(--navy-3)', 'לקראת מסירה': 'var(--accent)', 'הושלם': 'var(--ok)', 'בהשהיה': 'var(--ink-3)' };
 
 export function Dashboard() {
   const { db, me, nav, live } = useStore();
@@ -29,32 +28,53 @@ export function Dashboard() {
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'בוקר טוב' : hour < 17 ? 'צהריים טובים' : 'ערב טוב';
   const statusParts = PROJECT_STATUSES.map((s) => ({ label: s, value: projects.filter((p) => p.status === s).length, color: STATUS_COLORS[s] })).filter((x) => x.value);
+  const timeline = activeProjects.filter((p) => p.startDate && p.dueDate).sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 8)
+    .map((p) => ({ id: p.id, name: p.name, start: p.startDate, end: p.dueDate, progress: p.progress, color: STATUS_COLORS[p.status], status: p.status, late: p.dueDate < todayISO && p.status !== 'הושלם' }));
+  const showFees = fin && hasFeature(db, 'fees');
+  const feeMonths = showFees ? Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(DEMO_TODAY.getFullYear(), DEMO_TODAY.getMonth() + i - 2, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const ms = db.feeMilestones.filter((f) => pids.has(f.projectId));
+    return {
+      label: monthName(d.getMonth()).slice(0, 3),
+      value: ms.filter((f) => f.status === 'שולם' && (f.paidAt || f.dueDate).startsWith(key)).reduce((a, f) => a + f.amount, 0),
+      value2: ms.filter((f) => f.status !== 'שולם' && f.dueDate.startsWith(key)).reduce((a, f) => a + f.amount, 0),
+    };
+  }) : [];
   const myActivity = db.activity.filter((a) => a.projectId === null ? me.role !== 'member' : pids.has(a.projectId));
 
   return (
     <div className="stack-lg">
-      <div className="page-head" style={{ marginBottom: 0 }}>
-        <div className="grow">
-          <div className="eyebrow">יום {DOW[DEMO_TODAY.getDay()]}, {DEMO_TODAY.getDate()} ב{monthName(DEMO_TODAY.getMonth())} {DEMO_TODAY.getFullYear()} <AssumeTag>תאריך הדגמה קבוע</AssumeTag></div>
-          <h1 className="display" style={{ fontSize: 'var(--fs-3xl)', marginTop: 6 }}>{greet}, {me.name.split(' ')[0]}</h1>
-          <p className="ph-sub">{today.length + late.length ? `יש לך ${today.length} משימות להיום${late.length ? ` ו-${late.length} באיחור` : ''}` : 'אין משימות פתוחות להיום'}{meetingsToday.length ? `, ${meetingsToday.length} פגישות` : ''}{pendingAp.length ? ` ו-${pendingAp.length} פריטים שממתינים ללקוחות` : ''}.</p>
+      <section className="hero" aria-label="סיכום היום">
+        <div className="hero-in">
+          <div style={{ minWidth: 0 }}>
+            <div className="hero-date">יום {DOW[DEMO_TODAY.getDay()]}, {DEMO_TODAY.getDate()} ב{monthName(DEMO_TODAY.getMonth())} {DEMO_TODAY.getFullYear()} <AssumeTag>תאריך הדגמה קבוע</AssumeTag></div>
+            <h1 className="hero-title">{greet}, {me.name.split(' ')[0]}</h1>
+            <p className="hero-sub">{today.length + late.length ? `יש לך ${today.length} משימות להיום${late.length ? ` ו-${late.length} באיחור` : ''}` : 'אין משימות פתוחות להיום'}{meetingsToday.length ? `, ${meetingsToday.length} פגישות` : ''}{pendingAp.length ? ` ו-${pendingAp.length} פריטים שממתינים ללקוחות` : ''}.</p>
+          </div>
+          <div className="hero-actions">
+            <Btn kind="primary" icon={LuPlus} onClick={() => nav('/tasks?new=1')}>משימה</Btn>
+            <Btn icon={LuCalendarPlus} onClick={() => nav('/calendar?new=1')}>פגישה</Btn>
+            <Btn icon={LuUpload} onClick={() => nav('/plans?upload=1')}>שרטוט</Btn>
+            {fin ? <Btn icon={LuReceipt} onClick={() => nav('/expenses?new=1')}>הוצאה</Btn> : null}
+            <Btn icon={LuSend} onClick={() => nav('/approvals?new=1')}>שליחה לאישור</Btn>
+          </div>
         </div>
-        <div className="row wrap">
-          <Btn icon={LuPlus} onClick={() => nav('/tasks?new=1')}>משימה</Btn>
-          <Btn icon={LuCalendarPlus} onClick={() => nav('/calendar?new=1')}>פגישה</Btn>
-          <Btn icon={LuUpload} onClick={() => nav('/plans?upload=1')}>שרטוט</Btn>
-          {fin ? <Btn icon={LuReceipt} onClick={() => nav('/expenses?new=1')}>הוצאה</Btn> : null}
-          <Btn icon={LuSend} onClick={() => nav('/approvals?new=1')}>שליחה לאישור</Btn>
+        <div className="hero-strip">
+          <HeroCell label="משימות להיום" icon={LuListChecks} value={today.length} meta="משויכות אליך" onClick={() => nav('/tasks?view=today')} />
+          <HeroCell label="משימות באיחור" icon={LuClock} value={late.length} meta={late[0] ? `הוותיקה: ${relDay([...late].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0].dueDate)}` : 'הכול בזמן'} tone={late.length ? 'bad' : ''} onClick={() => nav('/tasks?view=late')} />
+          <HeroCell label="פגישות היום" icon={LuCalendarDays} value={meetingsToday.length} meta={meetingsToday[0] ? `הבאה: ${[...meetingsToday].sort((a, b) => a.start.localeCompare(b.start))[0].start}` : 'אין פגישות'} onClick={() => nav('/calendar?view=day')} />
+          <HeroCell label="ממתין לאישור לקוח" icon={LuBadgeCheck} value={pendingAp.length} meta={`${pendingAp.filter((a) => a.dueAt < todayISO).length} עברו את היעד`} tone={pendingAp.some((a) => a.dueAt < todayISO) ? 'warn' : ''} onClick={() => nav('/approvals')} />
+          {fin ? <HeroCell label="התראות תקציב" icon={LuWallet} value={budgetAlerts.length} meta="מעל הסף או בחריגת סעיף" tone={budgetAlerts.length ? 'bad' : ''} onClick={() => nav('/budget')} /> : null}
         </div>
-      </div>
+      </section>
 
-      <div className="grid-4" style={fin ? { gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' } : undefined}>
-        <Stat label="משימות להיום" icon={LuListChecks} value={today.length} meta="משויכות אליך" onClick={() => nav('/tasks?view=today')} />
-        <Stat label="משימות באיחור" icon={LuClock} value={late.length} meta={late[0] ? `הוותיקה: ${relDay(late.sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0].dueDate)}` : 'הכול בזמן'} tone={late.length ? 'alert' : ''} onClick={() => nav('/tasks?view=late')} />
-        <Stat label="פגישות היום" icon={LuCalendarDays} value={meetingsToday.length} meta={meetingsToday[0] ? `הבאה: ${meetingsToday.sort((a, b) => a.start.localeCompare(b.start))[0].start}` : '—'} onClick={() => nav('/calendar?view=day')} />
-        <Stat label="ממתין לאישור לקוח" icon={LuBadgeCheck} value={pendingAp.length} meta={`${pendingAp.filter((a) => a.dueAt < todayISO).length} עברו את היעד`} tone={pendingAp.some((a) => a.dueAt < todayISO) ? 'warn' : ''} onClick={() => nav('/approvals')} />
-        {fin ? <Stat label="התראות תקציב" icon={LuWallet} value={budgetAlerts.length} meta="פרויקטים מעל הסף או בחריגת סעיף" tone={budgetAlerts.length ? 'alert' : ''} onClick={() => nav('/budget')} /> : null}
-      </div>
+      {timeline.length ? (
+        <Card title="ציר זמן פרויקטים" icon={LuFolderKanban} actions={<Btn size="sm" kind="ghost" onClick={() => nav('/projects')}>לכל הפרויקטים<LuArrowLeft aria-hidden /></Btn>}>
+          <div className="scroll-x"><div style={{ minWidth: 560 }}><ProjectTimeline rows={timeline} today={todayISO} onOpen={(id) => nav(`/projects/${id}`)} /></div></div>
+          <div className="legend mt16">{[...new Set(timeline.map((r) => r.status))].map((st) => <span key={st}><i style={{ background: STATUS_COLORS[st] }} />{st}</span>)}<span className="muted">· המילוי מראה את אחוז ההתקדמות</span></div>
+        </Card>
+      ) : null}
 
       <div className="grid-main-side">
         <div className="stack-lg" style={{ minWidth: 0 }}>
@@ -127,11 +147,28 @@ export function Dashboard() {
             </Card>
           ) : null}
 
+          {showFees ? (
+            <Card title="שכר טרחה: גבייה לפי חודש" icon={LuCoins} actions={IS_LIVE ? undefined : <span className="tag-demo">נתונים מדומים</span>}>
+              <Columns data={[...feeMonths].reverse()} height={170} width={330} color="var(--ok)" series2={{ color: 'var(--accent)', label: 'צפוי לגבייה', label1: 'נגבה' }} />
+              <div className="row between mt8 xs muted"><span>נגבה ב-6 החודשים: <b className="num" style={{ color: 'var(--ink)' }}>{ils(feeMonths.reduce((a, m) => a + m.value, 0))}</b></span><button type="button" className="linkish xs" onClick={() => nav('/fees')}>לשכר טרחה</button></div>
+            </Card>
+          ) : null}
+
           <Card title="פרויקטים לפי סטטוס" icon={LuFolderKanban}>
             <Donut parts={statusParts} size={130} stroke={20} center={String(projects.length)} sub="פרויקטים" />
           </Card>
         </div>
       </div>
     </div>
+  );
+}
+
+function HeroCell({ label, icon: Icon, value, meta, tone, onClick }: any) {
+  return (
+    <button type="button" className={cx('hero-cell', tone)} onClick={onClick}>
+      <span className="hc-k"><Icon aria-hidden />{label}</span>
+      <span className="hc-v" style={{ display: 'block' }}>{value}</span>
+      <span className="hc-m">{meta}</span>
+    </button>
   );
 }

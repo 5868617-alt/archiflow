@@ -28,9 +28,10 @@ export function LockedFeature({ feature, inline }: { feature: string; inline?: b
 }
 
 export const COVER_LAYOUT: Record<string, T.PlanLayout> = { apartment: 'apartment', villa: 'villa-ground', cafe: 'cafe', office: 'office', kitchen: 'existing', garden: 'apartment-ceiling', hotel: 'cafe', house: 'villa-first' };
-export function ProjectCover({ project, height = 120 }: { project: T.Project; height?: number }) {
+export function ProjectCover({ project, height = 120, children }: { project: T.Project; height?: number; children?: any }) {
   return (
-    <div style={{ height, overflow: 'hidden', borderBottom: '1px solid var(--line)', position: 'relative', background: 'var(--plan-paper)', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}>
+    <div className="pc-cover" style={{ height, overflow: 'hidden', borderBottom: '1px solid var(--line)', position: 'relative', background: 'var(--plan-paper)', borderRadius: 'var(--r-lg) var(--r-lg) 0 0' }}>
+      {children}
       <div style={{ position: 'absolute', inset: '-20% -6% auto -6%', opacity: 0.9 }}><PlanSvg layout={COVER_LAYOUT[project.cover] || 'apartment'} /></div>
       <span className="code" style={{ position: 'absolute', top: 10, insetInlineStart: 10, background: 'var(--surface)' }}>{project.code}</span>
     </div>
@@ -74,27 +75,33 @@ export function TaskLine({ t, onOpen, showProject = true }: { t: T.Task; onOpen?
 
 /** Project status control. Never changes status silently: always asks, with optional note. */
 export function ProjectStatusControl({ project }: { project: T.Project }) {
-  const { me, run, toast, live } = useStore();
+  const { me } = useStore();
   const [next, setNext] = useState<T.ProjectStatus | null>(null);
-  const [note, setNote] = useState('');
-  const [notify, setNotify] = useState(true);
   if (!canChangeProjectStatus(me)) return <StatusBadge s={project.status} />;
   return (
     <>
-      <select className="select sm" style={{ width: 'auto', fontWeight: 600 }} value={project.status} onChange={(e) => { setNext(e.target.value as T.ProjectStatus); setNote(''); }} aria-label="סטטוס פרויקט">
+      <select className="select sm" style={{ width: 'auto', fontWeight: 600 }} value={project.status} onChange={(e) => setNext(e.target.value as T.ProjectStatus)} aria-label="סטטוס פרויקט">
         {PROJECT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
-      {next ? (
-        <Modal title="שינוי סטטוס פרויקט" onClose={() => setNext(null)} size="narrow" foot={<><Btn kind="primary" onClick={() => { run(A.setProjectStatus, project.id, next, note); toast(`הסטטוס עודכן ל"${next}"`); setNext(null); }}>עדכון סטטוס</Btn><Btn kind="ghost" onClick={() => setNext(null)}>ביטול</Btn></>}>
-          <div className="stack">
-            <div className="row g8 wrap"><StatusBadge s={project.status} /><span className="muted">←</span><StatusBadge s={next} /></div>
-            <Field label="הערה לשינוי (אופציונלי)" hint={next === 'בהשהיה' ? 'מומלץ לציין סיבה ותאריך חזרה צפוי' : 'תופיע ביומן הפעילות של הפרויקט'}><Textarea id="status-note" value={note} onChange={(e: any) => setNote(e.target.value)} rows={2} /></Field>
-            <Check id="status-notify" checked={notify} onChange={setNotify} label="להודיע לצוות הפרויקט (התראה פנימית)" />
-            {next === 'הושלם' ? <Callout kind="info">סימון כ"הושלם" יעדכן את ההתקדמות ל-100%. פריטים פתוחים יישארו פתוחים.</Callout> : null}
-          </div>
-        </Modal>
-      ) : null}
+      {next ? <StatusChangeModal project={project} next={next} onClose={() => setNext(null)} /> : null}
     </>
+  );
+}
+
+// a project status never changes silently: every change (select, board drag) goes through this confirmation
+export function StatusChangeModal({ project, next, onClose }: { project: T.Project; next: T.ProjectStatus; onClose: () => void }) {
+  const { run, toast } = useStore();
+  const [note, setNote] = useState('');
+  const [notify, setNotify] = useState(true);
+  return (
+    <Modal title="שינוי סטטוס פרויקט" sub={project.name} onClose={onClose} size="narrow" foot={<><Btn kind="primary" onClick={() => { run(A.setProjectStatus, project.id, next, note); toast(`הסטטוס עודכן ל"${next}"`); onClose(); }}>עדכון סטטוס</Btn><Btn kind="ghost" onClick={onClose}>ביטול</Btn></>}>
+      <div className="stack">
+        <div className="row g8 wrap"><StatusBadge s={project.status} /><span className="muted">←</span><StatusBadge s={next} /></div>
+        <Field label="הערה לשינוי (אופציונלי)" hint={next === 'בהשהיה' ? 'מומלץ לציין סיבה ותאריך חזרה צפוי' : 'תופיע ביומן הפעילות של הפרויקט'}><Textarea id="status-note" value={note} onChange={(e: any) => setNote(e.target.value)} rows={2} /></Field>
+        <Check id="status-notify" checked={notify} onChange={setNotify} label="להודיע לצוות הפרויקט (התראה פנימית)" />
+        {next === 'הושלם' ? <Callout kind="info">סימון כ"הושלם" יעדכן את ההתקדמות ל-100%. פריטים פתוחים יישארו פתוחים.</Callout> : null}
+      </div>
+    </Modal>
   );
 }
 

@@ -130,3 +130,49 @@ export function Logo({ size = 30 }: any) {
     </svg>
   );
 }
+
+// Project timeline: each project is a bar from start to target date, filled to its progress,
+// with a "today" line. RTL: time runs from right (earlier) to left (later), like reading Hebrew.
+export function ProjectTimeline({ rows, today, onOpen }: { rows: { id: string; name: string; start: string; end: string; progress: number; color: string; status: string; late?: boolean }[]; today: string; onOpen?: (id: string) => void }) {
+  if (!rows.length) return null;
+  const t = (d: string) => new Date(d + 'T00:00:00').getTime();
+  const DAY = 86400000;
+  const lo0 = Math.min(...rows.map((r) => t(r.start)), t(today) - 30 * DAY);
+  const hi0 = Math.max(...rows.map((r) => t(r.end)), t(today) + 60 * DAY);
+  const lo = new Date(new Date(lo0).getFullYear(), new Date(lo0).getMonth(), 1).getTime();
+  const hiD = new Date(hi0); const hi = new Date(hiD.getFullYear(), hiD.getMonth() + 1, 1).getTime();
+  const pos = (ms: number) => ((ms - lo) / (hi - lo)) * 100; // % from the right edge
+  const months: { label: string; at: number; year?: number }[] = [];
+  for (let d = new Date(lo); d.getTime() < hi; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) months.push({ label: MONTHS_S[d.getMonth()], at: pos(d.getTime()), year: d.getFullYear() });
+  const step = Math.ceil(months.length / 12);
+  months.forEach((m, i) => { const prev = months[i - step]; if (step === 1 && m.label !== MONTHS_S[0] && i !== 0) m.year = undefined; else if (step > 1 && prev && prev.year === m.year) m.year = undefined; });
+  const nowAt = pos(t(today));
+  return (
+    <div className="ptl" role="list" aria-label="ציר זמן פרויקטים">
+      <div className="ptl-axis" aria-hidden>
+        {months.map((m, i) => (i % step === 0 ? <span key={i} className="ptl-month" style={{ insetInlineStart: m.at + '%' }}>{m.label}{m.year ? <b> {String(m.year).slice(2)}</b> : null}</span> : null))}
+      </div>
+      <div className="ptl-body">
+        <div className="ptl-layer" aria-hidden>
+          {months.map((m, i) => (i % step === 0 ? <i key={i} className="ptl-gl" style={{ insetInlineStart: m.at + '%' }} /> : null))}
+          <div className="ptl-today" style={{ insetInlineStart: nowAt + '%' }}><span>היום</span></div>
+        </div>
+        {rows.map((r) => {
+          const a = pos(t(r.start)), b = pos(t(r.end));
+          return (
+            <button type="button" role="listitem" key={r.id} className="ptl-row" onClick={() => onOpen?.(r.id)} title={`${r.name} · ${r.status} · ${r.progress}%`}>
+              <span className="ptl-name ellipsis">{r.name}</span>
+              <span className="ptl-track">
+                <span className={'ptl-bar' + (r.late ? ' late' : '')} style={{ insetInlineStart: a + '%', width: Math.max(1.5, b - a) + '%', ['--c' as any]: r.color }}>
+                  <span className="ptl-fill" style={{ width: r.progress + '%' }} />
+                  <span className="ptl-pct">{r.progress}%</span>
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+const MONTHS_S = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳'];

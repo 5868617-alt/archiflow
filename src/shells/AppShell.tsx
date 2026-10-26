@@ -6,7 +6,8 @@ import { canSeeFinance, canManageTeam, hasFeature, isOverdue, visibleProjectIds,
 import { todayISO } from '../data/dates';
 import { Btn, Menu, MenuItem, cx, IconBtn } from '../ui/core';
 import { Logo } from '../ui/charts';
-import { DemoStrip, GlobalSearch, NotificationBell, RoleSwitcher, ThemeToggle, Toasts } from './common';
+import { DemoStrip, NotificationBell, RoleSwitcher, ThemeToggle, Toasts } from './common';
+import { CommandPalette, SearchTrigger, ShortcutsHelp, useCommandPalette } from './Palette';
 import { parseRoute } from '../lib/route';
 import { SubBanner } from '../pages/Billing';
 
@@ -61,6 +62,7 @@ export function AppShell({ children }: any) {
   const plan = currentPlan(db);
   const sub = db.officeSubscription;
   const go = (to: string) => { nav(to); setOpen(false); };
+  const pal = useCommandPalette();
   return (
     <div className="shell">
       <aside className={cx('sidebar', open && 'open')} aria-label="ניווט ראשי">
@@ -89,7 +91,7 @@ export function AppShell({ children }: any) {
         <DemoStrip />
         <header className="topbar">
           <IconBtn icon={LuMenu} label="תפריט" className="mobile-menu-btn" onClick={() => setOpen(true)} />
-          <GlobalSearch />
+          <SearchTrigger onOpen={() => pal.setOpen(true)} />
           <div className="tb-actions">
             <QuickCreate />
             <ThemeToggle />
@@ -99,6 +101,16 @@ export function AppShell({ children }: any) {
         </header>
         <main className="content" id="main"><SubBanner />{children}</main>
       </div>
+      <nav className="tabbar" aria-label="ניווט מהיר">
+        {[{ to: '/dashboard', label: 'היום', icon: LuLayoutDashboard }, { to: '/projects', label: 'פרויקטים', icon: LuFolderKanban }].map((it) => (
+          <button key={it.to} type="button" className={cx('tb-item', base === it.to && 'on')} onClick={() => go(it.to)} aria-current={base === it.to ? 'page' : undefined}><it.icon aria-hidden /><span>{it.label}</span></button>
+        ))}
+        <button type="button" className="tb-item tb-new" onClick={() => pal.setOpen(true)} aria-label="חיפוש ופעולה חדשה"><span className="tb-plus"><LuPlus aria-hidden /></span></button>
+        <button type="button" className={cx('tb-item', base === '/tasks' && 'on')} onClick={() => go('/tasks')} aria-current={base === '/tasks' ? 'page' : undefined}><LuListChecks aria-hidden /><span>משימות</span></button>
+        <button type="button" className={cx('tb-item', open && 'on')} onClick={() => setOpen(true)}><LuMenu aria-hidden /><span>עוד</span></button>
+      </nav>
+      {pal.open ? <CommandPalette onClose={() => pal.setOpen(false)} onHelp={() => pal.setHelp(true)} /> : null}
+      {pal.help ? <ShortcutsHelp onClose={() => pal.setHelp(false)} /> : null}
       <Toasts />
     </div>
   );

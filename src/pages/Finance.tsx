@@ -5,7 +5,7 @@ import { visibleProjects, projectOf, supplierOf, A, uid, byId, projectFinance, b
 import { EXPENSE_CATEGORIES } from '../data/seed';
 import type * as T from '../data/types';
 import { todayISO, D } from '../data/dates';
-import { PageHead, Btn, Select, SearchBox, Chips, DataTable, StatusBadge, Badge, Card, Modal, Field, Input, Textarea, Empty, Callout, Stat, Progress, cx, Confirm, AssumeTag, DemoTag, FutureTag, Segmented } from '../ui/core';
+import { CameraButton, PageHead, Btn, Select, SearchBox, Chips, DataTable, StatusBadge, Badge, Card, Modal, Field, Input, Textarea, Empty, Callout, Stat, Progress, cx, Confirm, AssumeTag, DemoTag, FutureTag, Segmented } from '../ui/core';
 import { BudgetBars, Columns, StackBar, Donut } from '../ui/charts';
 import { ProjectLink } from './shared';
 import { ils, ilsShort, pct, date, monthName } from '../lib/format';
@@ -252,7 +252,7 @@ export function ExpenseForm({ expense, defaults = {}, onClose }: any) {
         <Field label="שולם ע״י" htmlFor="ef-pb"><Select id="ef-pb" value={f.paidBy} onChange={(e: any) => set('paidBy', e.target.value)} options={['לקוח ישירות', 'דרך המשרד']} /></Field>
         <Field label="סטטוס" htmlFor="ef-st"><Select id="ef-st" value={f.status} onChange={(e: any) => set('status', e.target.value)} options={['שולם', 'ממתין לתשלום']} /></Field>
         <Field label="קבלה / חשבונית" full error={err.receipt} hint={live ? 'PDF, JPG או PNG עד 20MB. נשמר באחסון פרטי.' : 'הקובץ לא נשמר בדמו – נשמר רק שם הקובץ'} htmlFor="ef-r">
-          <div className="row g8"><Input id="ef-r" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e: any) => { const fl = e.target.files?.[0] || null; receiptFile.current = fl; set('receipt', fl?.name || null); }} style={{ paddingTop: 6 }} />{f.receipt ? (live && (f as any)._receiptPath && !receiptFile.current ? <button type="button" className="badge info" onClick={() => openFile('receipts', (f as any)._receiptPath)}><LuPaperclip aria-hidden />{f.receipt}</button> : <span className="badge info"><LuPaperclip aria-hidden />{f.receipt}</span>) : null}</div>
+          <div className="row g8 wrap"><Input id="ef-r" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e: any) => { const fl = e.target.files?.[0] || null; receiptFile.current = fl; set('receipt', fl?.name || null); }} style={{ paddingTop: 6 }} /><CameraButton label="צילום קבלה" onFile={(fl) => { receiptFile.current = fl; set('receipt', fl.name); }} />{f.receipt ? (live && (f as any)._receiptPath && !receiptFile.current ? <button type="button" className="badge info" onClick={() => openFile('receipts', (f as any)._receiptPath)}><LuPaperclip aria-hidden />{f.receipt}</button> : <span className="badge info"><LuPaperclip aria-hidden />{f.receipt}</span>) : null}</div>
         </Field>
       </div>
       {willExceed ? <div className="mt16"><Callout kind="assume">ההוצאה תעביר את הסעיף "{f.category}" מעבר לתקציב ({ils(line!.actual + Number(f.amount))} מתוך {ils(line!.planned)}). תישלח התראה לאחראי/ת הפרויקט.</Callout></div> : null}

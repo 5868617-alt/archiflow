@@ -42,12 +42,12 @@ function load(): { db: DB; userId: string; path: string; theme?: string } | null
 }
 function save(v: any) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage unavailable: demo still works in memory */ } }
 
-export interface Toast { id: number; text: string; kind: 'ok' | 'bad' | 'info'; }
+export interface Toast { id: number; text: string; kind: 'ok' | 'bad' | 'info'; undo?: () => void; }
 export interface Ctx {
   db: DB; me: T.User; role: T.Role; path: string;
   nav: (to: string) => void; back: () => void;
   run: <A extends any[]>(fn: (db: DB, ctx: { me: T.User }, ...args: A) => any, ...args: A) => any;
-  toast: (text: string, kind?: Toast['kind']) => void; toasts: Toast[];
+  toast: (text: string, kind?: Toast['kind'], undo?: () => void) => void; toasts: Toast[]; dismissToast?: (id: number) => void;
   switchUser: (userId: string) => void; reset: () => void;
   theme: string; setTheme: (t: string) => void;
   /** present only in the site connected to the real database */
@@ -86,11 +86,12 @@ export function StoreProvider({ children }: { children: any }) {
   }, [theme]);
 
   const me = db.users.find((u) => u.id === userId) || db.users[1];
-  const toast = useCallback((text: string, kind: Toast['kind'] = 'ok') => {
+  const toast = useCallback((text: string, kind: Toast['kind'] = 'ok', undo?: () => void) => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, text, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3600);
+    setToasts((t) => [...t, { id, text, kind, undo }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), undo ? 6500 : 3600);
   }, []);
+  const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
   const nav = useCallback((to: string) => {
     setHistory((h) => [...h.slice(-30), path]);
     setPath(to);
@@ -126,6 +127,6 @@ export function StoreProvider({ children }: { children: any }) {
     toast('נתוני ההדגמה אופסו למצב ההתחלתי', 'info');
   }, [toast]);
 
-  const value = useMemo<Ctx>(() => ({ db, me, role: me.role, path, nav, back, run, toast, toasts, switchUser, reset, theme, setTheme: setThemeState }), [db, me, path, nav, back, run, toast, toasts, switchUser, reset, theme]);
+  const value = useMemo<Ctx>(() => ({ db, me, role: me.role, path, nav, back, run, toast, toasts, dismissToast, switchUser, reset, theme, setTheme: setThemeState }), [db, me, path, nav, back, run, toast, toasts, dismissToast, switchUser, reset, theme]);
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }

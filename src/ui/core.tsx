@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LuX, LuChevronLeft, LuChevronUp, LuChevronDown, LuChevronsUpDown, LuFlaskConical, LuSparkles, LuInfo, LuTriangleAlert, LuCircleCheck, LuCircleAlert, LuSearch, LuInbox, LuLock, LuArrowUpRight } from 'react-icons/lu';
+import { LuX, LuChevronLeft, LuChevronUp, LuChevronDown, LuChevronsUpDown, LuFlaskConical, LuSparkles, LuInfo, LuTriangleAlert, LuCircleCheck, LuCircleAlert, LuSearch, LuInbox, LuLock, LuArrowUpRight, LuCamera } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { initials } from '../lib/format';
 
@@ -47,8 +47,11 @@ const TONE: Record<string, string> = {
 export function Badge({ tone, children, dot, icon: Icon, title }: any) {
   return <span className={cx('badge', tone)} title={title}>{dot ? <i className="bd" /> : null}{Icon ? <Icon aria-hidden /> : null}{children}</span>;
 }
-export function StatusBadge({ s, dot = true }: { s: string; dot?: boolean }) {
-  return <Badge tone={TONE[s] ?? ''} dot={dot}>{s}</Badge>;
+// project statuses get their own hue so the nine stages read at a glance (same colors as the dashboard chart)
+export const STATUS_COLORS: Record<string, string> = { 'ליד חדש': 'var(--violet)', 'תכנון ראשוני': '#5F8FD0', 'תכנון בפיתוח': 'var(--info)', 'ממתין לאישור': 'var(--warn)', 'תכנון מאושר': '#3E9A6E', 'ביצוע': 'var(--st-exec)', 'לקראת מסירה': '#C99400', 'הושלם': 'var(--ok)', 'בהשהיה': 'var(--ink-3)' };
+export function StatusBadge({ s, dot = true, className }: { s: string; dot?: boolean; className?: string }) {
+  if (STATUS_COLORS[s]) return <span className={cx('badge st', className)} style={{ ['--c' as any]: STATUS_COLORS[s] }}>{dot ? <i className="bd" /> : null}{s}</span>;
+  return <span className={cx('badge', TONE[s] ?? '', className)}>{dot ? <i className="bd" /> : null}{s}</span>;
 }
 export const toneOf = (s: string) => TONE[s] ?? '';
 export function DemoTag({ children = 'הדמיה', title }: any) {
@@ -74,10 +77,11 @@ export function Callout({ kind = 'info', title, children, icon }: any) {
 }
 
 // ---------- layout ----------
-export function PageHead({ title, sub, crumbs, actions, badge }: any) {
+export function PageHead({ title, sub, crumbs, actions, badge, art, className }: any) {
   const { nav } = useStore();
   return (
-    <div className="page-head">
+    <div className={cx('page-head', art && 'page-head-art', className)}>
+      {art ? <div className="ph-art" aria-hidden>{art}</div> : null}
       <div className="grow">
         {crumbs ? (
           <nav className="crumbs" aria-label="פירורי לחם">
@@ -332,7 +336,7 @@ export function DataTable({ columns, rows, onRow, pageSize = 0, initialSort, emp
   return (
     <div>
       <div className="table-wrap">
-        <table className="tbl">
+        <table className="tbl tbl-stack">
           <thead>
             <tr>
               {columns.map((c: any) => (
@@ -354,7 +358,7 @@ export function DataTable({ columns, rows, onRow, pageSize = 0, initialSort, emp
               lastGroup = g;
               return [head, (
                 <tr key={r[rowKey]} className={onRow ? 'click' : ''} onClick={onRow ? () => onRow(r) : undefined}>
-                  {columns.map((c: any) => <td key={c.key} className={c.num ? 'num' : ''}>{c.render ? c.render(r) : r[c.key]}</td>)}
+                  {columns.map((c: any, ci: number) => <td key={c.key} data-label={typeof c.label === 'string' ? c.label : ''} className={cx(c.num && 'num', ci === 0 && 'td-first', !c.label && 'td-nolabel')}>{c.render ? c.render(r) : r[c.key]}</td>)}
                 </tr>
               )];
             })}
@@ -373,5 +377,16 @@ export function DataTable({ columns, rows, onRow, pageSize = 0, initialSort, emp
         </div>
       ) : null}
     </div>
+  );
+}
+
+// "take a photo" for phones and tablets: opens the rear camera directly (hidden on devices with a mouse)
+export function CameraButton({ onFile, label = 'צילום במצלמה' }: { onFile: (f: File) => void; label?: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <span className="camera-only">
+      <Btn size="sm" icon={LuCamera} onClick={(e: any) => { e.stopPropagation(); ref.current?.click(); }}>{label}</Btn>
+      <input ref={ref} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ''; }} />
+    </span>
   );
 }

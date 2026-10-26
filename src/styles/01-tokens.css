@@ -1,15 +1,15 @@
 /* ArchiFlow design system
    Layout concept: drafting-table workspace — a navy "title block" sidebar on the right (RTL),
-   warm paper workspace, hairline blueprint grids used sparingly, yellow reserved for primary actions. */
+   cool drafting-vellum workspace, hairline blueprint grids used sparingly, yellow reserved for primary actions. */
 :root {
   /* color */
-  --bg: #F5F3EE;
-  --paper: #FBFAF7;
+  --bg: #EDEFF3;
+  --paper: #F6F7F9;
   --surface: #FFFFFF;
-  --surface-2: #F8F6F1;
-  --surface-3: #EFECE4;
-  --line: #E3DFD5;
-  --line-strong: #CEC8BA;
+  --surface-2: #F5F6F9;
+  --surface-3: #E9ECF1;
+  --line: #E0E4EB;
+  --line-strong: #C9CFDA;
   --ink: #15213B;
   --ink-2: #47526B;
   --ink-3: #7A8296;
@@ -32,9 +32,10 @@
   --bad: #B13A3A; --bad-soft: #F8E3E1;
   --info: #2D5C99; --info-soft: #E3ECF8;
   --violet: #6A4C9C; --violet-soft: #EEE8F6;
-  --shadow-1: 0 1px 2px rgba(21, 33, 59, 0.06);
-  --shadow-2: 0 6px 24px rgba(21, 33, 59, 0.10);
-  --shadow-3: 0 18px 48px rgba(21, 33, 59, 0.22);
+  --st-exec: #2B3E68;
+  --shadow-1: 0 1px 2px rgba(21, 33, 59, 0.05), 0 1px 1px rgba(21, 33, 59, 0.03);
+  --shadow-2: 0 2px 4px rgba(21, 33, 59, 0.04), 0 10px 28px -6px rgba(21, 33, 59, 0.14);
+  --shadow-3: 0 24px 60px -12px rgba(21, 33, 59, 0.32);
   --scrim: rgba(13, 21, 38, 0.48);
 
   /* type */
@@ -44,7 +45,8 @@
   --fs-xs: 0.75rem; --fs-sm: 0.8125rem; --fs-md: 0.875rem; --fs-lg: 1rem; --fs-xl: 1.25rem; --fs-2xl: 1.625rem; --fs-3xl: 2.125rem;
 
   /* shape */
-  --r-sm: 4px; --r-md: 6px; --r-lg: 10px;
+  --r-sm: 5px; --r-md: 8px; --r-lg: 14px; --r-xl: 18px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
   --sidebar-w: 248px;
   --topbar-h: 60px;
 }
@@ -61,7 +63,7 @@
     --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
     --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
     --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
-    --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14);
+    --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #8FA6D6;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
     --scrim: rgba(0, 0, 0, 0.6);
     color-scheme: dark;
@@ -79,7 +81,7 @@
   --warn: #E5A846; --warn-soft: rgba(229, 168, 70, 0.14);
   --bad: #EE7B73; --bad-soft: rgba(238, 123, 115, 0.14);
   --info: #7FAEEB; --info-soft: rgba(127, 174, 235, 0.14);
-  --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14);
+  --violet: #B39BE0; --violet-soft: rgba(179, 155, 224, 0.14); --st-exec: #8FA6D6;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3); --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.4); --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55);
   --scrim: rgba(0, 0, 0, 0.6);
   color-scheme: dark;

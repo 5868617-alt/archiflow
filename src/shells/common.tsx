@@ -92,62 +92,6 @@ export function DemoStrip() {
   );
 }
 
-export function GlobalSearch() {
-  const { db, me, nav, live } = useStore();
-  const [q, setQ] = useState('');
-  const [open, setOpen] = useState(false);
-  const ref = useRef<any>(null);
-  const inputRef = useRef<any>(null);
-  useOutside(ref, () => setOpen(false), open);
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement;
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) { e.preventDefault(); inputRef.current?.focus(); setOpen(true); }
-    };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, []);
-  const results = useMemo(() => {
-    const s = q.trim();
-    if (s.length < 2) return [];
-    const ok = inScope(db, me);
-    const m = (x: string) => x && x.toLowerCase().includes(s.toLowerCase());
-    const projs = visibleProjects(db, me);
-    const groups = [
-      { title: 'פרויקטים', icon: LuFolderKanban, items: projs.filter((p) => m(p.name) || m(p.code) || m(p.city)).map((p) => ({ label: p.name, sub: `${p.code} · ${p.status}`, to: `/projects/${p.id}` })) },
-      { title: 'לקוחות', icon: LuUsers, items: db.clients.filter((c) => projs.some((p) => p.clientId === c.id) && (m(c.name) || c.contacts.some((x) => m(x.name)))).map((c) => ({ label: c.name, sub: c.city, to: `/clients/${c.id}` })) },
-      { title: 'משימות', icon: LuListChecks, items: db.tasks.filter((t) => ok(t.projectId) && m(t.title)).map((t) => ({ label: t.title, sub: t.status, to: `/tasks?open=${t.id}` })) },
-      { title: 'שרטוטים', icon: LuPencilRuler, items: db.plans.filter((p) => ok(p.projectId) && (m(p.title) || m(p.number))).map((p) => ({ label: `${p.number} ${p.title}`, sub: db.projects.find((x) => x.id === p.projectId)?.name, to: `/plans/${p.id}` })) },
-      { title: 'מסמכים', icon: LuFileText, items: db.documents.filter((d) => ok(d.projectId) && m(d.name)).map((d) => ({ label: d.name, sub: d.folder, to: `/documents/${d.id}` })) },
-      { title: 'ספקים', icon: LuTruck, items: db.suppliers.filter((x) => m(x.name) || m(x.category)).map((x) => ({ label: x.name, sub: x.category, to: `/suppliers/${x.id}` })) },
-    ].map((g) => ({ ...g, items: g.items.slice(0, 4) })).filter((g) => g.items.length);
-    return groups;
-  }, [q, db, me]);
-  const go = (to: string) => { nav(to); setOpen(false); setQ(''); };
-  return (
-    <div className="search" ref={ref}>
-      <LuSearch aria-hidden />
-      <input ref={inputRef} id="global-search" value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} placeholder="חיפוש פרויקט, לקוח, שרטוט, משימה…" aria-label="חיפוש כללי"
-        onKeyDown={(e) => { if (e.key === 'Enter' && results[0]?.items[0]) go(results[0].items[0].to); if (e.key === 'Escape') setOpen(false); }} />
-      <kbd>/</kbd>
-      {open && q.trim().length >= 2 ? (
-        <div className="search-results" role="listbox">
-          {results.length === 0 ? <div className="small muted" style={{ padding: 12 }}>לא נמצאו תוצאות עבור "{q}"</div> : results.map((g) => (
-            <div key={g.title}>
-              <div className="sr-group">{g.title}</div>
-              {g.items.map((it: any, i: number) => (
-                <button type="button" key={i} className="sr-item" onClick={() => go(it.to)}>
-                  <g.icon aria-hidden /><span className="grow ellipsis">{it.label}</span><span className="xs muted ellipsis" style={{ maxWidth: 160 }}>{it.sub}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 const NK: any = { approval: LuCircleCheck, task: LuListChecks, meeting: LuUsers, budget: LuCircleAlert, comment: LuInfo, system: LuInfo, plan: LuPencilRuler };
 const NT: any = { approval: 'warn', task: 'info', meeting: 'info', budget: 'bad', comment: 'violet', system: '', plan: 'accent' };
 export function NotificationBell({ centerPath = '/notifications' }: any) {
@@ -185,13 +129,14 @@ export function NotificationBell({ centerPath = '/notifications' }: any) {
 }
 
 export function Toasts() {
-  const { toasts, live } = useStore();
+  const { toasts, dismissToast } = useStore() as any;
   return (
     <div className="toasts" aria-live="polite">
-      {toasts.map((t) => (
+      {toasts.map((t: any) => (
         <div key={t.id} className={cx('toast', t.kind)}>
           {t.kind === 'bad' ? <LuCircleAlert aria-hidden /> : t.kind === 'info' ? <LuInfo aria-hidden /> : <LuCircleCheck aria-hidden />}
-          <span>{t.text}</span>
+          <span className="grow">{t.text}</span>
+          {t.undo ? <button type="button" className="toast-undo" onClick={() => { t.undo(); dismissToast?.(t.id); }}><LuRotateCcw aria-hidden />ביטול</button> : null}
         </div>
       ))}
     </div>

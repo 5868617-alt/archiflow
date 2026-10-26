@@ -5,7 +5,7 @@ import { visibleProjects, visibleProjectIds, projectOf, userName, A, uid, byId, 
 import { DOC_FOLDERS } from '../data/seed';
 import type * as T from '../data/types';
 import { todayISO } from '../data/dates';
-import { PageHead, Btn, Select, SearchBox, DataTable, StatusBadge, Badge, Card, KV, Modal, Field, Input, Textarea, Empty, Callout, Switch, cx, DemoTag } from '../ui/core';
+import { CameraButton, PageHead, Btn, Select, SearchBox, DataTable, StatusBadge, Badge, Card, KV, Modal, Field, Input, Textarea, Empty, Callout, Switch, cx, DemoTag } from '../ui/core';
 import { FileIcon } from '../ui/charts';
 import { ProjectLink } from './shared';
 import { SendForApproval } from './Approvals';
@@ -146,6 +146,7 @@ function UploadDoc({ defaultProject, defaultFolder, docId, onClose }: any) {
           <LuUpload aria-hidden />{file ? <><b>{file.name}</b><span className="small muted">{fileSize(Math.round(file.size / 1024))}</span></> : <b>גררו קובץ או לחצו לבחירה</b>}
           <input ref={ref} type="file" hidden onChange={(e) => { const fl = e.target.files?.[0]; if (fl) take(fl); }} />
         </div>
+        <CameraButton onFile={take} label="צילום מסמך" />
         {err.file ? <Callout kind="bad">{err.file}</Callout> : null}
         {live ? null : <button type="button" className="linkish small" style={{ alignSelf: 'flex-start' }} onClick={() => { setFile({ name: 'הצעת מחיר ספק.pdf', size: 184000 }); if (!f.name) setF({ ...f, name: 'הצעת מחיר ספק' }); }}>שימוש בקובץ לדוגמה</button>}
         {!existing ? (

@@ -187,6 +187,52 @@ await go(page, '/notifications');
 const markAll = page.locator('button:has-text("סימון הכול כנקרא")');
 if (await markAll.count()) { await markAll.click(); await waitWrites(page); }
 log((await q("select count(*) from public.notifications where user_id = '11111111-0000-4000-8000-000000000002' and read_at is null")) === '0', 'notifications marked read', await badToasts(page));
+// ---------------------------------------------------------------- upgrades: command palette, board drag + undo, inline edit, confirmed status drag
+await go(page, '/dashboard');
+await page.keyboard.press('Control+k');
+await page.fill('#global-search', 'משימה חיה');
+await page.keyboard.press('Enter');
+await settle(page);
+log(page.url().includes('/tasks') && page.url().includes(taskId), 'command palette finds a task and opens it');
+
+const dragTo = async (card, zone) => {
+  await card.scrollIntoViewIfNeeded(); const a = await card.boundingBox();
+  await zone.scrollIntoViewIfNeeded(); const b = await zone.boundingBox();
+  await page.mouse.move(a.x + 20, a.y + 12); await page.mouse.down(); await page.mouse.move(a.x + 30, a.y + 24, { steps: 3 });
+  await page.mouse.move(b.x + b.width / 2, b.y + 60, { steps: 10 }); await page.mouse.up();
+};
+await page.keyboard.press('Escape'); await go(page, '/dashboard');
+await go(page, '/tasks'); await settle(page); await page.click('button.tab:has-text("קנבן")'); await settle(page);
+const before = await q(`select status from public.tasks where id = '${taskId}'`);
+const card = page.locator('.k-card', { hasText: 'משימה חיה לבדיקה' }).first();
+const fromCol = await card.evaluate((el) => el.closest('[data-drop]').getAttribute('data-drop'));
+const toCol = fromCol === 'בתהליך' ? 'ממתין לאחר' : 'בתהליך';
+await dragTo(card, page.locator(`.k-col[data-drop="${toCol}"]`));
+await waitWrites(page);
+const after = await q(`select status from public.tasks where id = '${taskId}'`);
+log(after !== before && ['in_progress', 'waiting'].includes(after), 'task dragged on the board is saved in DB', `${before} → ${after}`);
+await page.click('.toast-undo'); await waitWrites(page);
+log((await q(`select status from public.tasks where id = '${taskId}'`)) === before, 'undo from the toast restores the task status in DB');
+
+await go(page, '/dashboard'); await go(page, '/tasks'); await settle(page);
+const row = page.locator('tr', { hasText: 'משימה חיה לבדיקה' }).first();
+await row.locator('select[aria-label^="עדיפות"]').selectOption('דחופה'); await waitWrites(page);
+log((await q(`select priority from public.tasks where id = '${taskId}'`)) === 'urgent', 'inline priority edit in the task table is saved', await badToasts(page));
+
+await go(page, '/projects'); await page.click('.btn-group button:has-text("לוח")'); await settle(page);
+const pst = await q(`select status from public.projects where id = '${P1}'`);
+const pcard = page.locator(`.k-card:has(.code)`).filter({ has: page.locator('.code') }).first();
+const pfrom = await pcard.evaluate((el) => el.closest('[data-drop]').getAttribute('data-drop'));
+const pid = await pcard.evaluate((el) => el.getAttribute('data-drag-id'));
+const pstatus0 = await q(`select status from public.projects where id = '${pid}'`);
+const pto = pfrom === 'תכנון ראשוני' ? 'ליד חדש' : 'תכנון ראשוני';
+await dragTo(pcard, page.locator(`.k-col[data-drop="${pto}"]`));
+await page.waitForTimeout(300);
+const asked = await page.isVisible('.modal:has-text("שינוי סטטוס פרויקט")');
+log(asked && (await q(`select status from public.projects where id = '${pid}'`)) === pstatus0, 'project dropped on another status asks first and changes nothing yet');
+await page.click('.modal-foot .btn.primary'); await waitWrites(page);
+log((await q(`select status from public.projects where id = '${pid}'`)) !== pstatus0 && (await q(`select count(*) from public.project_status_history where project_id = '${pid}'`)) !== '0', 'confirmed board drop goes through set_project_status with history', await badToasts(page));
+
 const errsA = page.errors.filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
 await page.context().close();
 

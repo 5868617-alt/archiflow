@@ -217,6 +217,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/__test/recovery') { const u = await userByEmail(url.searchParams.get('email')); const s = await session(u); return send(res, 200, { link: `/#access_token=${s.access_token}&refresh_token=${s.refresh_token}&expires_in=3600&type=recovery` }); }
     if (url.pathname === '/__test/sql') { const r = await psql(body.toString()); return send(res, 200, r); }
     if (url.pathname.startsWith('/_pdfjs/')) { res.writeHead(200, { 'Content-Type': 'text/javascript' }); return fs.createReadStream(path.join(PDFJS, path.basename(url.pathname))).pipe(res); }
+    const STATIC_TYPES = { '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.js': 'text/javascript' };
+    const sf = path.join(path.dirname(SITE), path.basename(url.pathname));
+    if (req.method === 'GET' && STATIC_TYPES[path.extname(url.pathname)] && url.pathname.split('/').length === 2 && fs.existsSync(sf)) { res.writeHead(200, { 'Content-Type': STATIC_TYPES[path.extname(url.pathname)] }); return fs.createReadStream(sf).pipe(res); }
     if (req.method === 'GET') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(fs.readFileSync(SITE)); }
     send(res, 404, {});
   } catch (e) { console.error(e); send(res, 500, { message: String(e) }); }

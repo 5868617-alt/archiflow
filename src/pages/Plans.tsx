@@ -4,7 +4,7 @@ import { useStore } from '../data/store';
 import { visibleProjects, visibleProjectIds, projectOf, userName, A, uid, byId, hasFeature } from '../data/api';
 import type * as T from '../data/types';
 import { todayISO, nowStamp } from '../data/dates';
-import { PageHead, Btn, Select, SearchBox, Chips, StatusBadge, Badge, Card, KV, Tabs, Modal, Field, Input, Textarea, Empty, Callout, FutureTag, DemoTag, Segmented, DataTable, Switch, cx, Confirm, Stat } from '../ui/core';
+import { CameraButton, PageHead, Btn, Select, SearchBox, Chips, StatusBadge, Badge, Card, KV, Tabs, Modal, Field, Input, Textarea, Empty, Callout, FutureTag, DemoTag, Segmented, DataTable, Switch, cx, Confirm, Stat } from '../ui/core';
 import { PlanSvg, NoPreview } from '../ui/PlanSvg';
 import { FileIcon } from '../ui/charts';
 import { ProjectLink, PersonCell, LockedFeature } from './shared';
@@ -246,6 +246,7 @@ export function UploadPlan({ defaultProject, planId, onClose }: { defaultProject
             {file ? <><b>{file.name}</b><span className="small muted">{(file.size / 1048576).toFixed(2)}MB · {file.type}</span></> : <><b>גררו קובץ לכאן או לחצו לבחירה</b><span className="small muted">PDF, JPG, PNG, DWG, DXF · עד 250MB</span></>}
             <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf" hidden onChange={(e) => takeFile(e.target.files?.[0])} />
           </div>
+          <CameraButton onFile={(fl) => takeFile(fl)} label="צילום סקיצה או שרטוט" />
           {err.file ? <Callout kind="bad">{err.file}</Callout> : null}
           {live ? null : <div className="row g8 wrap"><span className="small muted">אין קובץ בהישג יד?</span><button type="button" className="linkish small" onClick={() => { setFile({ name: 'A-110_kitchen_rev.pdf', size: 2.4 * 1048576, type: 'PDF' }); setErr({}); if (!f.title) setF((x) => ({ ...x, title: 'מטבח – עדכון' })); }}>קובץ PDF לדוגמה</button><button type="button" className="linkish small" onClick={() => { setFile({ name: 'survey_existing.dwg', size: 1.1 * 1048576, type: 'DWG' }); setErr({}); if (!f.title) setF((x) => ({ ...x, title: 'מדידת מצב קיים' })); }}>קובץ DWG לדוגמה</button></div>}
           {file && !RENDERABLE(file.type) ? <Callout kind="assume" title="DWG / DXF">הקובץ יישמר עם היסטוריית גרסאות ומטא-דאטה, אך {live ? 'אין עדיין המרה לתצוגה בדפדפן' : 'בדמו אין המרה לתצוגה'}. מומלץ להעלות גם ייצוא PDF.</Callout> : null}

@@ -5,7 +5,7 @@
   "type": "module",
   "description": "ArchiFlow – ניהול משרדי אדריכלות ועיצוב פנים (React + Supabase)",
   "scripts": {
-    "build:site": "node build.mjs --live && cp dist/live/index.html site/index.html",
+    "build:site": "node build.mjs --live && cp dist/live/index.html dist/live/sw.js dist/live/manifest.webmanifest dist/live/*.png dist/live/*.svg site/",
     "build:demo": "node build.mjs && node build.mjs --test",
     "build:test": "node build.mjs --live --test",
     "test:db": "supabase/reset_test_db.sh && supabase/run_tests.sh",

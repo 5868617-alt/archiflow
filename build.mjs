@@ -79,10 +79,20 @@ if (LIVE) {
   const html = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="description" content="ArchiFlow – ניהול פרויקטים למשרדי אדריכלות ועיצוב פנים">
+<meta name="theme-color" content="#15213B">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ArchiFlow">
+<link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 ${head}</head><body>
 <script>window.__AF_LIVE=true;${cfg}</script>
-${bodyHtml}</body></html>`;
+${bodyHtml}${TEST ? '' : `<script>if('serviceWorker' in navigator&&location.protocol==='https:'){addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})}</script>`}</body></html>`;
   const out = path.join(root, TEST ? 'dist/live-test' : 'dist/live');
+  fs.mkdirSync(out, { recursive: true });
+  for (const f of fs.readdirSync(path.join(root, 'public'))) {
+    const src = path.join(root, 'public', f);
+    if (f === 'sw.js') fs.writeFileSync(path.join(out, f), fs.readFileSync(src, 'utf8').replace('__BUILD__', Date.now().toString(36)));
+    else fs.copyFileSync(src, path.join(out, f));
+  }
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'index.html'), html);
   if (!TEST) {

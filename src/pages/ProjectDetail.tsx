@@ -7,7 +7,8 @@ import { PHASES } from '../data/types';
 import { todayISO, daysFromToday } from '../data/dates';
 import { PageHead, Btn, Tabs, Card, KV, StatusBadge, Badge, Progress, Avatar, Empty, Modal, Field, Input, Select, Callout, IconBtn, cx } from '../ui/core';
 import { StackBar } from '../ui/charts';
-import { ProjectStatusControl, ActivityFeed, MeetingLine, PersonCell, LockedFeature } from './shared';
+import { ProjectStatusControl, ActivityFeed, MeetingLine, PersonCell, LockedFeature, COVER_LAYOUT } from './shared';
+import { PlanSvg } from '../ui/PlanSvg';
 import { ProjectForm } from './Projects';
 import { ProjectTasks } from './Tasks';
 import { PlanGrid } from './Plans';
@@ -59,6 +60,7 @@ export function ProjectDetail({ id, tab }: { id: string; tab: string }) {
         crumbs={[{ label: 'פרויקטים', to: '/projects' }, { label: p.name }]}
         title={p.name}
         badge={<span className="code">{p.code}</span>}
+        art={<PlanSvg layout={COVER_LAYOUT[p.cover] || 'apartment'} />}
         sub={<span className="row wrap g12 small"><span className="row g4"><LuMapPin aria-hidden style={{ width: 14 }} />{p.address}, {p.city}</span><span className="row g4"><LuRuler aria-hidden style={{ width: 14 }} />{p.areaSqm} מ״ר</span><span className="row g4"><LuUser aria-hidden style={{ width: 14 }} />{client?.name}</span><span className="row g4"><LuCalendarClock aria-hidden style={{ width: 14 }} />יעד {date(p.dueDate)}</span></span>}
         actions={<><ProjectStatusControl project={p} />{me.role !== 'client' ? <Btn icon={LuPencil} onClick={() => setEditing(true)}>עריכה</Btn> : null}</>}
       />

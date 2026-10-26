@@ -59,11 +59,12 @@ export function LiveStoreProvider({ children }: { children: any }) {
   const pending = useRef(0);
   const meRef = useRef<T.User | null>(null);
 
-  const toast = useCallback((text: string, kind: Toast['kind'] = 'ok') => {
+  const toast = useCallback((text: string, kind: Toast['kind'] = 'ok', undo?: () => void) => {
     const id = Date.now() + Math.random();
-    setToasts((t) => [...t, { id, text, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === 'bad' ? 6000 : 3600);
+    setToasts((t) => [...t, { id, text, kind, undo }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === 'bad' ? 6000 : undo ? 6500 : 3600);
   }, []);
+  const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
   const go = useCallback((to: string, replace = false) => {
     setPath(to);
     try { const url = '#' + to; if (replace) history_replace(url); else window.history.pushState(null, '', url); } catch { /* ignore */ }
@@ -214,9 +215,9 @@ export function LiveStoreProvider({ children }: { children: any }) {
   };
 
   const value = useMemo<Ctx>(() => ({
-    db, me, role: me.role, path, nav, back, run, toast, toasts,
+    db, me, role: me.role, path, nav, back, run, toast, toasts, dismissToast,
     switchUser: (k: string) => switchContext(k), reset: () => reload(), theme, setTheme: setThemeState, live,
-  } as any), [db, me, path, nav, back, run, toast, toasts, switchContext, reload, theme, live]); // eslint-disable-line
+  } as any), [db, me, path, nav, back, run, toast, toasts, dismissToast, switchContext, reload, theme, live]); // eslint-disable-line
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }
 

@@ -1,12 +1,13 @@
 import { IS_LIVE } from '../data/dates';
 import { useState, useEffect } from 'react';
-import { LuList, LuSquareKanban, LuCalendarDays, LuClipboardList, LuPlus, LuTrash2, LuLink, LuChevronRight, LuChevronLeft, LuWandSparkles, LuCopy } from 'react-icons/lu';
+import { LuChevronDown, LuList, LuSquareKanban, LuCalendarDays, LuClipboardList, LuPlus, LuTrash2, LuLink, LuChevronRight, LuChevronLeft, LuWandSparkles, LuCopy } from 'react-icons/lu';
 import { useStore } from '../data/store';
+import { usePointerDrag } from '../ui/drag';
 import { visibleProjects, visibleProjectIds, userName, projectOf, A, uid, isOverdue, byId } from '../data/api';
 import { TASK_STATUSES, PRIORITIES } from '../data/types';
 import type * as T from '../data/types';
 import { todayISO, D, daysFromToday, iso, DEMO_TODAY, parseISO } from '../data/dates';
-import { PageHead, Btn, Tabs, Chips, Select, SearchBox, DataTable, StatusBadge, Badge, Drawer, Modal, Field, Input, Textarea, Empty, Callout, Avatar, Card, cx, Segmented, Confirm } from '../ui/core';
+import { PageHead, Btn, Tabs, Chips, Select, SearchBox, DataTable, StatusBadge, Badge, Drawer, Modal, Field, Input, Textarea, Empty, Callout, Avatar, Card, cx, Segmented, Confirm, toneOf } from '../ui/core';
 import { PersonCell, ProjectLink, DueCell, CommentThread, TaskLine } from './shared';
 import { date, DOW_S, monthName, dateShort } from '../lib/format';
 
@@ -74,8 +75,8 @@ export function TaskTable({ tasks, onOpen, hideProject }: any) {
         { key: 'title', label: 'משימה', render: (t: T.Task) => <div className="col" style={{ gap: 0, maxWidth: 420 }}><span className={cx(t.status === 'הושלם' && 'muted')} style={{ textDecoration: t.status === 'הושלם' ? 'line-through' : undefined, fontWeight: 500 }}>{t.title}</span>{t.source ? <span className="xs muted row g4"><LuLink aria-hidden style={{ width: 11 }} />{t.source.kind === 'plan' ? 'מממצא בשרטוט' : t.source.kind === 'meeting' ? 'ממעקב פגישה' : t.source.kind === 'approval' ? 'מאישור לקוח' : 'מתבנית'}</span> : null}</div> },
         ...(hideProject ? [] : [{ key: 'projectId', label: 'פרויקט', sortValue: (t: T.Task) => projectOf(db, t.projectId)?.name || 'ת', render: (t: T.Task) => <ProjectLink id={t.projectId} /> }]),
         { key: 'assigneeId', label: 'אחראי/ת', sortValue: (t: T.Task) => userName(db, t.assigneeId), render: (t: T.Task) => <PersonCell id={t.assigneeId} /> },
-        { key: 'priority', label: 'עדיפות', sortValue: (t: T.Task) => PRIORITIES.indexOf(t.priority), render: (t: T.Task) => <StatusBadge s={t.priority} dot={false} /> },
-        { key: 'status', label: 'סטטוס', sortValue: (t: T.Task) => TASK_STATUSES.indexOf(t.status), render: (t: T.Task) => <StatusBadge s={t.status} /> },
+        { key: 'priority', label: 'עדיפות', sortValue: (t: T.Task) => PRIORITIES.indexOf(t.priority), render: (t: T.Task) => <InlineSelect value={t.priority} options={PRIORITIES} label={`עדיפות: ${t.title}`} onChange={(v: string) => { const prev = t.priority; run(A.saveTask, { ...t, priority: v }, false); toast(`העדיפות עודכנה ל"${v}"`, 'ok', () => run(A.saveTask, { ...t, priority: prev }, false)); }} /> },
+        { key: 'status', label: 'סטטוס', sortValue: (t: T.Task) => TASK_STATUSES.indexOf(t.status), render: (t: T.Task) => <InlineSelect value={t.status} options={TASK_STATUSES} label={`סטטוס: ${t.title}`} onChange={(v: string) => { const prev = t.status; run(A.setTaskStatus, t.id, v); toast(`הסטטוס עודכן ל"${v}"`, 'ok', () => run(A.setTaskStatus, t.id, prev)); }} /> },
         { key: 'dueDate', label: 'מועד', render: (t: T.Task) => <DueCell date={t.dueDate} done={t.status === 'הושלם'} /> },
       ]} />
     </div>
@@ -83,28 +84,32 @@ export function TaskTable({ tasks, onOpen, hideProject }: any) {
 }
 
 export function Kanban({ tasks, onOpen }: any) {
-  const { db, run, toast, live } = useStore();
-  const [over, setOver] = useState<string | null>(null);
-  const [drag, setDrag] = useState<string | null>(null);
+  const { db, run, toast } = useStore();
+  const move = (id: string, s: string) => {
+    const t = byId(db.tasks, id); if (!t || t.status === s) return;
+    const prev = t.status;
+    run(A.setTaskStatus, id, s);
+    toast(`"${t.title}" הועברה ל"${s}"`, 'ok', () => run(A.setTaskStatus, id, prev));
+  };
+  const dnd = usePointerDrag({ onDrop: move });
   return (
     <div className="kanban" aria-label="לוח קנבן">
       {TASK_STATUSES.map((s) => {
         const col = tasks.filter((t: T.Task) => t.status === s).sort((a: T.Task, b: T.Task) => a.dueDate.localeCompare(b.dueDate));
         return (
-          <div key={s} className={cx('k-col', over === s && 'drop')} onDragOver={(e) => { e.preventDefault(); setOver(s); }} onDragLeave={() => setOver(null)}
-            onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData('text/plain'); setOver(null); const t = byId(db.tasks, id); if (t && t.status !== s) { run(A.setTaskStatus, id, s); toast(`"${t.title}" הועברה ל"${s}"`); } }}>
-            <div className="k-head"><span className="row g8"><StatusBadge s={s} />{s === 'הושלם' ? null : null}</span><span className="xs muted num">{col.length}</span></div>
+          <div key={s} className={cx('k-col', dnd.over === s && dnd.dragId && 'drop')} data-drop={s}>
+            <div className="k-head"><span className="row g8"><StatusBadge s={s} /></span><span className="xs muted num">{col.length}</span></div>
             <div className="k-list">
-              {col.length === 0 ? <div className="xs muted t-center" style={{ padding: 16, border: '1px dashed var(--line-strong)', borderRadius: 6 }}>גררו לכאן משימה</div> : null}
+              {col.length === 0 ? <div className="k-empty xs muted t-center">גררו לכאן משימה</div> : null}
               {col.slice(0, s === 'הושלם' ? 8 : 40).map((t: T.Task) => (
-                <div key={t.id} className={cx('k-card', drag === t.id && 'dragging')} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', t.id); setDrag(t.id); }} onDragEnd={() => setDrag(null)} onClick={() => onOpen(t)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(t)}>
+                <div key={t.id} className={cx('k-card', dnd.dragId === t.id && 'dragging')} {...dnd.handle(t.id)} onClick={() => onOpen(t)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onOpen(t)}>
                   <div className="small bold">{t.title}</div>
                   <div className="xs muted ellipsis">{projectOf(db, t.projectId)?.name || 'משרד'}</div>
                   <div className="row between g8">
                     <Avatar user={db.users.find((u) => u.id === t.assigneeId)} size="sm" />
                     <span className="row g4">{t.priority === 'דחופה' || t.priority === 'גבוהה' ? <StatusBadge s={t.priority} dot={false} /> : null}<DueCell date={t.dueDate} done={t.status === 'הושלם'} /></span>
                   </div>
-                  <select className="select sm show-sm" value={t.status} onClick={(e) => e.stopPropagation()} onChange={(e) => { run(A.setTaskStatus, t.id, e.target.value); toast('הסטטוס עודכן'); }} aria-label="שינוי סטטוס">{TASK_STATUSES.map((x) => <option key={x}>{x}</option>)}</select>
+                  <select className="select sm show-sm" value={t.status} onClick={(e) => e.stopPropagation()} onChange={(e) => move(t.id, e.target.value)} aria-label="שינוי סטטוס">{TASK_STATUSES.map((x) => <option key={x}>{x}</option>)}</select>
                 </div>
               ))}
               {s === 'הושלם' && col.length > 8 ? <div className="xs muted t-center">ועוד {col.length - 8} שהושלמו</div> : null}
@@ -291,5 +296,17 @@ export function ProjectTasks({ projectId }: { projectId: string }) {
       {openId && byId(db.tasks, openId) ? <TaskDrawer id={openId} onClose={() => setOpenId(null)} /> : null}
       {tpl ? <ApplyTemplate projectId={projectId} onClose={() => setTpl(false)} /> : null}
     </div>
+  );
+}
+
+// edit in place: looks like a status badge, opens a native list on click (keyboard and screen-reader friendly)
+function InlineSelect({ value, options, onChange, label }: any) {
+  return (
+    <span className={cx('inline-edit badge', toneOf(value))} onClick={(e) => e.stopPropagation()}>
+      <select value={value} aria-label={label} onChange={(e) => e.target.value !== value && onChange(e.target.value)}>
+        {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <span aria-hidden>{value}</span><LuChevronDown aria-hidden className="ie-caret" />
+    </span>
   );
 }
