@@ -16,6 +16,9 @@ export function makeSeedDB() {
     officeSubscription: seed.officeSubscription, invoices: seed.invoices, pricingChanges: seed.pricingChanges, platformOffices: seed.platformOffices,
     tickets: seed.tickets, auditLog: seed.auditLog, systemEvents: seed.systemEvents, announcements: seed.announcements,
     retentionPolicies: seed.retentionPolicies, helpArticles: seed.helpArticles, faqs: seed.faqs,
+    projectPhases: seed.projectPhases, permits: seed.permits, consultants: seed.consultants, timeEntries: seed.timeEntries, memberRates: seed.memberRates,
+    siteVisits: seed.siteVisits, siteFindings: seed.siteFindings, clientBriefs: seed.clientBriefs, moodItems: seed.moodItems, libraryItems: seed.libraryItems,
+    branding: {} as T.Branding,
     settings: {
       memberCanSeeFinance: false, memberSeesAllProjects: false, clientSeesBudgetSummary: true, adminCanManageBilling: false,
       notif: { approvals: { app: true, email: true }, tasks: { app: true, email: false }, meetings: { app: true, email: true }, budget: { app: true, email: true }, comments: { app: true, email: false }, digest: { app: false, email: true } },
@@ -31,6 +34,8 @@ export type DB = ReturnType<typeof makeSeedDB> & {
   messages: T.Message[]; emailLog: T.EmailLog[]; activity: T.Activity[]; subscriptionPlans: T.SubscriptionPlan[]; officeSubscription: T.OfficeSubscription;
   invoices: T.Invoice[]; pricingChanges: T.PricingChange[]; platformOffices: T.PlatformOffice[]; tickets: T.Ticket[]; auditLog: T.AuditEntry[];
   systemEvents: T.SystemEvent[]; announcements: T.Announcement[];
+  projectPhases: T.ProjectPhase[]; permits: T.Permit[]; consultants: T.Consultant[]; timeEntries: T.TimeEntry[]; memberRates: T.MemberRate[];
+  siteVisits: T.SiteVisit[]; siteFindings: T.SiteFinding[]; clientBriefs: T.ClientBrief[]; moodItems: T.MoodItem[]; libraryItems: T.LibraryItem[]; branding: T.Branding;
 };
 
 const KEY = 'archiflow.demo.v3';
@@ -73,7 +78,7 @@ function initialPath(fallback: string) {
 
 export function StoreProvider({ children }: { children: any }) {
   const saved = useRef(load()).current;
-  const [db, setDb] = useState<DB>(() => saved?.db || makeSeedDB());
+  const [db, setDb] = useState<DB>(() => (saved?.db ? { ...makeSeedDB(), ...saved.db } : makeSeedDB()));
   const [userId, setUserId] = useState<string>(() => saved?.userId || 'u_yoav');
   const [path, setPath] = useState<string>(() => initialPath(saved?.path || '/login'));
   const [history, setHistory] = useState<string[]>([]);

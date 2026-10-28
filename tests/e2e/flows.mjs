@@ -233,6 +233,97 @@ log(asked && (await q(`select status from public.projects where id = '${pid}'`))
 await page.click('.modal-foot .btn.primary'); await waitWrites(page);
 log((await q(`select status from public.projects where id = '${pid}'`)) !== pstatus0 && (await q(`select count(*) from public.project_status_history where project_id = '${pid}'`)) !== '0', 'confirmed board drop goes through set_project_status with history', await badToasts(page));
 
+// ---------------------------------------------------------------- architect workflow (studio side)
+await go(page, `/projects/${P1}/phases`);
+await page.click('text=בחירת תבנית שלבים');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log((await q(`select count(*) from public.project_phases where project_id = '${P1}'`)) === '7' && (await q(`select status from public.project_phases where project_id = '${P1}' and idx = 0`)) === 'active', 'phase template saved (7 phases, first active)', await badToasts(page));
+await page.click('.phase-row.active >> text=סיום שלב');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log((await q(`select string_agg(status, ',' order by idx) from public.project_phases where project_id = '${P1}' and idx < 2`)) === 'done,active', 'finishing a phase opens the next one in the DB', await badToasts(page));
+await page.locator('select[aria-label^="שיוך"]').first().selectOption({ index: 2 });
+await waitWrites(page);
+log((await q(`select count(*) from public.fee_milestones where project_id = '${P1}' and phase_id is not null`)) === '1', 'fee milestone linked to a phase', await badToasts(page));
+
+await go(page, '/time?log=1');
+await page.selectOption('#te-p', P1);
+await page.fill('#te-h', '3');
+await page.fill('#te-n', 'שעות מבדיקה חיה');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log((await q("select hours || ':' || phase_idx from public.time_entries where note = 'שעות מבדיקה חיה' and user_id = '11111111-0000-4000-8000-000000000002'")) === '3.00:1', 'time entry saved for me on the active phase', await badToasts(page));
+await go(page, '/time?tab=rates');
+await page.fill('#rate-11111111-0000-4000-8000-000000000005', '115');
+await page.click('text=שמירה (1)');
+await waitWrites(page);
+log((await q("select hourly_cost from public.member_rates where user_id = '11111111-0000-4000-8000-000000000005'")) === '115.00', 'cost rate saved (upsert)', await badToasts(page));
+
+await go(page, `/projects/${P1}/permit`);
+await page.click('text=פתיחת תיק רישוי');
+await page.fill('#pf-n', '2026-9999');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+await page.click('text=מעבר להכנת הבקשה');
+await waitWrites(page);
+log((await q(`select stage || ':' || file_number from public.permits where project_id = '${P1}'`)) === 'preparing:2026-9999', 'permit opened and moved a stage', await badToasts(page));
+await page.click('text=הוספת היועצים המקובלים');
+await waitWrites(page);
+log(Number(await q(`select count(*) from public.project_consultants where project_id = '${P1}'`)) >= 4, 'suggested consultants added', await badToasts(page));
+
+await go(page, `/projects/${P1}/site`);
+await page.click('text=תיעוד ביקור ראשון');
+await page.fill('#vf-s', 'ביקור מבדיקה חיה');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+await page.getByRole('button', { name: 'ממצא', exact: true }).click();
+await page.fill('#ff-t', 'ממצא חי עם תמונה');
+await page.setInputFiles('#ff-photo', '/tmp/claude-0/receipt.png');
+await page.waitForTimeout(1200);
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+const photo = await q("select photo_path from public.site_findings where title = 'ממצא חי עם תמונה'");
+log(!!photo && photo.startsWith('a0000000-0000-4000-8000-000000000001/' + P1 + '/') && fs.existsSync(new URL('./.storage/site-photos/' + photo, import.meta.url)), 'finding with a photo stored in the private bucket', await badToasts(page));
+await page.click('text=שליחה ללקוח');
+await page.click('.modal-foot >> text=שליחה');
+await waitWrites(page);
+log((await q("select status from public.site_visits where summary = 'ביקור מבדיקה חיה'")) === 'sent' && (await q("select count(*) from public.email_outbox where template = 'site_report'")) !== '0', 'site report sent through send_site_report()', await badToasts(page));
+
+await go(page, `/projects/${P1}/brief`);
+await page.click('.card-head >> text=שליחה ללקוח');
+await page.click('.modal-foot >> text=שליחה');
+await waitWrites(page);
+log((await q(`select status from public.client_briefs where project_id = '${P1}'`)) === 'sent', 'brief sent through send_client_brief()', await badToasts(page));
+await page.getByRole('button', { name: 'צבע', exact: true }).click();
+await page.fill('#mf-t', 'צבע בדיקה חי');
+await page.click('label[for="mf-s"]');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log((await q("select shared from public.mood_items where title = 'צבע בדיקה חי'")) === 't', 'shared mood board item saved', await badToasts(page));
+
+await go(page, '/library');
+await page.click('text=פריט לספרייה');
+await page.fill('#lf-n', 'פריט ספרייה חי');
+await page.fill('#lf-p', '100');
+await page.setInputFiles('#lf-img', '/tmp/claude-0/receipt.png');
+await page.waitForTimeout(1200);
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log(!!(await q("select image_path from public.library_items where name = 'פריט ספרייה חי'")), 'library item with image saved', await badToasts(page));
+await page.locator('.lib-card', { hasText: 'פריט ספרייה חי' }).locator('text=למפרט של פרויקט').click();
+await page.selectOption('#ts-p', P1);
+await page.fill('#ts-r', 'חדר בדיקה');
+await page.click('.modal-foot .btn.primary');
+await waitWrites(page);
+log((await q(`select status || ':' || unit_price from public.spec_items where project_id = '${P1}' and room = 'חדר בדיקה'`)) === 'draft:100.00', 'library item added to the spec as a draft', await badToasts(page));
+
+await go(page, '/settings');
+await page.click('button[aria-label="צבע #1F3A5F"]');
+await page.click('text=שמירת הצבע');
+await waitWrites(page);
+log((await q("select brand_color from public.office_settings where office_id = 'a0000000-0000-4000-8000-000000000001'")) === '#1F3A5F', 'brand color saved', await badToasts(page));
+
 const errsA = page.errors.filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
 await page.context().close();
 
@@ -250,6 +341,24 @@ await dana.fill('input[aria-label="הודעה"]', 'הודעה מהלקוחה');
 await dana.press('input[aria-label="הודעה"]', 'Enter');
 await waitWrites(dana);
 log((await q("select count(*) from public.messages where body = 'הודעה מהלקוחה' and side = 'client'")) === '1', 'client message saved', await badToasts(dana));
+await go(dana, '/portal/brief');
+await dana.fill('#bq-routine', 'שגרה מבדיקה חיה');
+await dana.click('.brief-q >> text=סקנדינבי');
+await dana.click('text=שמירה והמשך אחר כך');
+await waitWrites(dana);
+log((await q(`select status || ':' || (answers->>'routine') from public.client_briefs where project_id = '${P1}'`)) === 'sent:שגרה מבדיקה חיה', 'client saves a brief draft through submit_client_brief()', await badToasts(dana));
+await dana.click('text=שליחה למשרד');
+await dana.click('.modal-foot >> text=שליחה');
+await waitWrites(dana);
+log((await q(`select status from public.client_briefs where project_id = '${P1}'`)) === 'submitted' && (await q(`select answers->'style'->>0 from public.client_briefs where project_id = '${P1}'`)) === 'סקנדינבי', 'client submits the brief', await badToasts(dana));
+await go(dana, '/portal/inspiration');
+await dana.locator('.mood', { hasText: 'צבע בדיקה חי' }).locator('.react-btn.love').click();
+await waitWrites(dana);
+log((await q("select reaction from public.mood_items where title = 'צבע בדיקה חי'")) === 'love', 'client reacts through react_mood_item()', await badToasts(dana));
+await go(dana, '/portal/site');
+await dana.waitForTimeout(1500);
+log(await dana.isVisible('text=ממצא חי עם תמונה') && (await dana.locator('img.sr-photo').count()) > 0, 'client reads the site report with its photo (signed link)');
+log(await dana.evaluate(() => getComputedStyle(document.querySelector('.portal')).getPropertyValue('--brand').trim().toUpperCase() === '#1F3A5F'), 'portal wears the studio brand color');
 const errsB = dana.errors.filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
 await dana.context().close();
 

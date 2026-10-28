@@ -7,6 +7,7 @@ import { useStore } from '../data/store';
 import { A, ROLE_LABEL } from '../data/api';
 import { PageHead, Btn, Card, KV, Tabs, Field, Input, Select, Textarea, Callout, Switch, Badge, FutureTag, DemoTag, Avatar, Confirm } from '../ui/core';
 import { CalendarSync } from './Calendar';
+import { BrandingCard } from './Branding';
 import { date } from '../lib/format';
 
 export function SettingsPage({ query }: any) {
@@ -49,7 +50,7 @@ export function SettingsPage({ query }: any) {
             }}>שמירה</Btn></div> : <div className="mt16 small muted">רק בעלים ומנהלים יכולים לערוך.</div>}
           </Card>
           <div className="stack-lg">
-            <Card title="תצוגה בפורטל"><div className="row g12"><span className="portal-logo">{o.logoText}</span><div><b>{o.name}</b><div className="xs muted">כך יופיע המשרד ללקוחות</div></div></div></Card>
+            <BrandingCard />
             <Card title="קיצורי דרך"><div className="col g8"><Btn icon={LuUsers} onClick={() => nav('/team')}>צוות והרשאות</Btn><Btn icon={LuBell} onClick={() => nav('/notifications?tab=prefs')}>העדפות התראה</Btn><Btn onClick={() => nav('/billing')}>מנוי וחיוב</Btn><Btn onClick={() => nav('/onboarding')}>{IS_LIVE ? 'פתיחת משרד נוסף' : 'אשף הקמת משרד (תצוגה)'}</Btn></div></Card>
           </div>
         </div>

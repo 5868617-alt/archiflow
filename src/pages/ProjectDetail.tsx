@@ -1,6 +1,6 @@
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
-import { LuPencil, LuMapPin, LuRuler, LuCalendarClock, LuUser, LuPhone, LuMail, LuListChecks, LuPencilRuler, LuLayers, LuFileText, LuCalendarDays, LuShoppingCart, LuWallet, LuCoins, LuBadgeCheck, LuUsers, LuMessageCircle, LuActivity, LuLayoutDashboard, LuPlus, LuCheck, LuFlag, LuX, LuEye } from 'react-icons/lu';
+import { LuPencil, LuMapPin, LuRuler, LuCalendarClock, LuUser, LuPhone, LuMail, LuListChecks, LuPencilRuler, LuLayers, LuFileText, LuCalendarDays, LuShoppingCart, LuWallet, LuCoins, LuBadgeCheck, LuUsers, LuMessageCircle, LuActivity, LuLayoutDashboard, LuPlus, LuCheck, LuFlag, LuX, LuEye, LuLayoutTemplate, LuLandmark, LuHardHat, LuClipboardList } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { projectOf, clientOf, userName, visibleProjectIds, canSeeFinance, projectFinance, hasFeature, A, isOverdue, canManageTeam } from '../data/api';
 import { PHASES } from '../data/types';
@@ -19,6 +19,12 @@ import { POTable } from './Procurement';
 import { ProjectBudget, ProjectFees } from './Finance';
 import { ProjectThread } from './Comms';
 import { date, ils, ilsShort, pct, relDay } from '../lib/format';
+import { ProjectPhases, PhaseStrip } from './Phases';
+import { ProjectPermit } from './Permit';
+import { ProjectSite } from './Site';
+import { ProjectBrief } from './Brief';
+import { phasesOf, openFindings } from '../data/api';
+import { permitLabel, BRIEF_STATUS } from '../data/architect';
 
 export function ProjectDetail({ id, tab }: { id: string; tab: string }) {
   const { db, me, nav, live } = useStore();
@@ -38,12 +44,17 @@ export function ProjectDetail({ id, tab }: { id: string; tab: string }) {
     ap: db.approvals.filter((x) => x.projectId === id && x.status === 'ממתין').length,
     team: db.assignments.filter((x) => x.projectId === id).length,
     msgs: db.messages.filter((x) => x.projectId === id).length,
+    site: openFindings(db, id).length,
   };
   const tabs = [
     { id: 'overview', label: 'סקירה', icon: LuLayoutDashboard },
+    { id: 'phases', label: 'שלבים ושכ״ט', icon: LuLayoutTemplate },
     { id: 'tasks', label: 'משימות', icon: LuListChecks, count: c.tasks },
+    { id: 'brief', label: 'שאלון והשראה', icon: LuClipboardList },
     { id: 'plans', label: 'שרטוטים', icon: LuPencilRuler, count: c.plans },
     { id: 'specs', label: 'מפרט', icon: LuLayers, count: c.specs },
+    { id: 'permit', label: 'רישוי ויועצים', icon: LuLandmark },
+    { id: 'site', label: 'פיקוח', icon: LuHardHat, count: c.site || undefined },
     { id: 'documents', label: 'מסמכים', icon: LuFileText, count: c.docs },
     { id: 'meetings', label: 'פגישות', icon: LuCalendarDays, count: c.meetings },
     { id: 'procurement', label: 'רכש', icon: LuShoppingCart, count: c.pos, lock: !hasFeature(db, 'procurement') },
@@ -67,6 +78,10 @@ export function ProjectDetail({ id, tab }: { id: string; tab: string }) {
       {p.statusNote ? <div style={{ marginTop: -8, marginBottom: 16 }}><Callout kind={p.status === 'בהשהיה' ? 'assume' : 'info'}>{p.status}: {p.statusNote}</Callout></div> : null}
       <Tabs tabs={tabs} value={tab} onChange={go} />
       {tab === 'overview' ? <Overview id={id} go={go} /> : null}
+      {tab === 'phases' ? <ProjectPhases projectId={id} /> : null}
+      {tab === 'brief' ? <ProjectBrief projectId={id} /> : null}
+      {tab === 'permit' ? <ProjectPermit projectId={id} /> : null}
+      {tab === 'site' ? <ProjectSite projectId={id} /> : null}
       {tab === 'tasks' ? <ProjectTasks projectId={id} /> : null}
       {tab === 'plans' ? <PlanGrid projectId={id} /> : null}
       {tab === 'specs' ? <SpecEditor projectId={id} embedded /> : null}
@@ -100,15 +115,19 @@ function Overview({ id, go }: any) {
     { k: 'specs', label: 'פריטי מפרט', v: db.specItems.filter((x) => x.projectId === id).length, sub: `${db.specItems.filter((x) => x.projectId === id && x.status === 'מאושר').length} מאושרים`, icon: LuLayers },
     { k: 'approvals', label: 'אישורים ממתינים', v: db.approvals.filter((x) => x.projectId === id && x.status === 'ממתין').length, sub: 'אצל הלקוח', icon: LuBadgeCheck },
     { k: 'documents', label: 'מסמכים', v: db.documents.filter((x) => x.projectId === id).length, sub: `${db.documents.filter((x) => x.projectId === id && x.sharedWithClient).length} משותפים`, icon: LuFileText },
+    { k: 'site', label: 'פיקוח באתר', v: openFindings(db, id).length, sub: `ממצאים פתוחים · ${db.siteVisits.filter((v) => v.projectId === id).length} ביקורים`, tone: openFindings(db, id).some((f) => f.severity === 'high') ? 'bad-t' : '', icon: LuHardHat },
+    { k: 'permit', label: 'רישוי', v: (() => { const pm = db.permits.find((x) => x.projectId === id); return pm ? permitLabel(pm.stage) : '—'; })(), sub: `${db.consultants.filter((x) => x.projectId === id && x.status === 'needed').length} יועצים חסרים`, icon: LuLandmark },
+    { k: 'brief', label: 'שאלון ולוח השראה', v: (() => { const b = db.clientBriefs.find((x) => x.projectId === id); return b ? BRIEF_STATUS[b.status].label : 'טרם נשלח'; })(), sub: `${db.moodItems.filter((m) => m.projectId === id && m.reaction === 'love').length} פריטים שהלקוח אהב`, icon: LuClipboardList },
     { k: 'procurement', label: 'הזמנות רכש', v: db.purchaseOrders.filter((x) => x.projectId === id).length, sub: `${db.purchaseOrders.filter((x) => x.projectId === id && !['סופקה', 'בוטלה'].includes(x.status)).length} פתוחות`, icon: LuShoppingCart },
   ];
   return (
     <div className="grid-main-side">
       <div className="stack-lg" style={{ minWidth: 0 }}>
-        <Card title="התקדמות ושלבים" actions={<span className="bold num">{p.progress}%</span>}>
+        <Card title="התקדמות ושלבים" actions={<><span className="bold num">{p.progress}%</span><Btn size="sm" kind="ghost" onClick={() => go('phases')}>{phasesOf(db, id).length ? 'שלבים ושכ״ט' : 'הגדרת שלבים'}</Btn></>}>
+          {phasesOf(db, id).length ? <PhaseStrip projectId={id} /> : (
           <div className="phases" style={{ overflowX: 'auto' }}>
             {PHASES.map((ph, i) => <div key={ph} className={cx('phase', i < p.phase && 'done', i === p.phase && p.status !== 'הושלם' && 'now', p.status === 'הושלם' && 'done')}><div className="bar" /><div className="ph-label" title={ph}>{ph}</div></div>)}
-          </div>
+          </div>)}
           <p className="small soft mt16">{p.description}</p>
         </Card>
 

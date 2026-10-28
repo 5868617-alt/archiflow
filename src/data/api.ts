@@ -5,6 +5,7 @@ import { confetti } from '../ui/confetti';
 import type { DB } from './store';
 import type * as T from './types';
 import { todayISO, daysFromToday, nowStamp, D } from './dates';
+import { PHASE_TEMPLATES, permitLabel } from './architect';
 
 export const uid = (p = 'id') => ((globalThis as any).__AF_LIVE ? crypto.randomUUID() : `${p}_${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`);
 
@@ -119,6 +120,29 @@ export function projectAlerts(db: DB, me: T.User) {
   }
   return out.sort((a, b) => b.reasons.filter((r) => r.tone === 'bad').length - a.reasons.filter((r) => r.tone === 'bad').length);
 }
+
+// ---------- architect workflow ----------
+export const phasesOf = (db: DB, projectId: string) => (db.projectPhases || []).filter((p) => p.projectId === projectId).sort((a, b) => a.idx - b.idx);
+export const canSeeRates = (me: T.User) => me.role === 'owner' || me.role === 'admin';
+/** managers see the whole office's hours; everyone else only their own */
+export const visibleTime = (db: DB, me: T.User) => (canSeeRates(me) ? db.timeEntries || [] : (db.timeEntries || []).filter((e) => e.userId === me.id));
+export const rateOf = (db: DB, userId: string) => (db.memberRates || []).find((r) => r.userId === userId)?.hourlyCost || 0;
+export function projectProfit(db: DB, projectId: string) {
+  const p = projectOf(db, projectId)!;
+  const entries = (db.timeEntries || []).filter((e) => e.projectId === projectId);
+  const hours = entries.reduce((s, e) => s + e.hours, 0);
+  const cost = entries.reduce((s, e) => s + e.hours * rateOf(db, e.userId), 0);
+  const fees = db.feeMilestones.filter((f) => f.projectId === projectId);
+  const feePaid = fees.filter((f) => f.status === 'שולם').reduce((s, f) => s + f.amount, 0);
+  const phases = phasesOf(db, projectId).map((ph) => {
+    const es = entries.filter((e) => e.phaseIdx === ph.idx);
+    const h = es.reduce((s, e) => s + e.hours, 0);
+    return { ...ph, hours: h, cost: es.reduce((s, e) => s + e.hours * rateOf(db, e.userId), 0), fee: fees.filter((f) => f.phaseId === ph.id).reduce((s, f) => s + f.amount, 0) };
+  });
+  const budgetHours = phases.reduce((s, ph) => s + (ph.budgetHours || 0), 0);
+  return { project: p, hours, cost, feeTotal: p.feeTotal, feePaid, profit: p.feeTotal - cost, effRate: hours ? p.feeTotal / hours : 0, budgetHours, phases, missingRates: [...new Set(entries.map((e) => e.userId))].filter((u) => !rateOf(db, u)) };
+}
+export const openFindings = (db: DB, projectId: string) => (db.siteFindings || []).filter((f) => f.projectId === projectId && f.status !== 'verified');
 
 // ---------- client visibility ----------
 export function clientVisible(db: DB, me: T.User) {
@@ -328,6 +352,101 @@ export const A = {
   resumeSubscription(db: DB, ctx: C) { const sub = db.officeSubscription; sub.status = 'פעיל'; sub.cancelAt = undefined; sub.history.push({ at: todayISO, text: 'ביטול הבקשה לביטול – המנוי ממשיך', by: ctx.me.name }); db.platformOffices[0].status = 'פעיל'; },
   simulateSubState(db: DB, ctx: C, status: T.OfficeSubscription['status']) { const sub = db.officeSubscription; sub.status = status; if (status === 'תקופת ניסיון') sub.trialEndsAt = D(5); sub.history.push({ at: todayISO, text: `סימולציה: מצב מנוי "${status}"`, by: 'הדמיה' }); db.platformOffices[0].status = status; },
   retryInvoice(db: DB, ctx: C, id: string) { const inv = byId(db.invoices, id)!; inv.status = 'שולמה'; },
+  // ---------- architect workflow ----------
+  applyPhaseTemplate(db: DB, ctx: C, projectId: string, tplId: string, withFees: boolean) {
+    const tpl = PHASE_TEMPLATES.find((t) => t.id === tplId)!; const p = projectOf(db, projectId)!;
+    db.projectPhases = db.projectPhases.filter((x) => x.projectId !== projectId);
+    const phases = tpl.phases.map((ph, idx) => ({ id: uid('ph'), projectId, idx, name: ph.name, status: (idx === 0 ? 'active' : 'upcoming') as T.PhaseStatus, budgetHours: ph.hours, startedOn: idx === 0 ? todayISO : undefined }));
+    db.projectPhases.push(...phases);
+    if (withFees && p.feeTotal > 0) phases.forEach((ph, i) => db.feeMilestones.push({ id: uid('fee'), projectId, title: `סיום שלב: ${ph.name}`, pct: tpl.phases[i].feePct, amount: Math.round((p.feeTotal * tpl.phases[i].feePct) / 100), dueDate: D(30 * (i + 1)), status: 'עתידי', phaseId: ph.id }));
+    logActivity(db, ctx, projectId, `הגדרת שלבי תכנון: ${tpl.label} (${phases.length} שלבים)`, `/projects/${projectId}/phases`);
+  },
+  savePhase(db: DB, ctx: C, ph: T.ProjectPhase, isNew: boolean) {
+    if (isNew) db.projectPhases.push(ph); else db.projectPhases[db.projectPhases.findIndex((x) => x.id === ph.id)] = ph;
+  },
+  deletePhase(db: DB, ctx: C, id: string) { db.projectPhases = db.projectPhases.filter((x) => x.id !== id); db.feeMilestones.forEach((f) => { if (f.phaseId === id) f.phaseId = undefined; }); },
+  startPhase(db: DB, ctx: C, id: string) { const ph = byId(db.projectPhases, id)!; ph.status = 'active'; ph.startedOn = ph.startedOn || todayISO; ph.doneOn = undefined; logActivity(db, ctx, ph.projectId, `תחילת שלב: ${ph.name}`, `/projects/${ph.projectId}/phases`); },
+  /** marks a phase done and opens the next one */
+  completePhase(db: DB, ctx: C, id: string) {
+    const ph = byId(db.projectPhases, id)!; ph.status = 'done'; ph.doneOn = todayISO;
+    const next = phasesOf(db, ph.projectId).find((x) => x.idx > ph.idx && x.status === 'upcoming');
+    if (next) { next.status = 'active'; next.startedOn = todayISO; }
+    logActivity(db, ctx, ph.projectId, `סיום שלב: ${ph.name}${next ? ` · השלב הבא: ${next.name}` : ''}`, `/projects/${ph.projectId}/phases`);
+  },
+  reopenPhase(db: DB, ctx: C, id: string) { const ph = byId(db.projectPhases, id)!; ph.status = 'active'; ph.doneOn = undefined; },
+  linkFeeToPhase(db: DB, ctx: C, feeId: string, phaseId: string | null) { const f = byId(db.feeMilestones, feeId)!; f.phaseId = phaseId || undefined; },
+  savePermit(db: DB, ctx: C, pm: T.Permit, isNew: boolean) {
+    if (isNew) db.permits.push(pm); else db.permits[db.permits.findIndex((x) => x.id === pm.id)] = pm;
+    logActivity(db, ctx, pm.projectId, `${isNew ? 'פתיחת תיק רישוי' : 'עדכון תיק רישוי'}: ${pm.requestType || pm.authority}`, `/projects/${pm.projectId}/permit`);
+  },
+  setPermitStage(db: DB, ctx: C, id: string, stage: T.PermitStage) {
+    const pm = byId(db.permits, id)!; const prev = pm.stage; pm.stage = stage;
+    if (stage === 'info_file' && !pm.infoFileOn) pm.infoFileOn = todayISO;
+    if (stage === 'submitted' && !pm.submittedOn) pm.submittedOn = todayISO;
+    if (stage === 'granted' && !pm.grantedOn) pm.grantedOn = todayISO;
+    logActivity(db, ctx, pm.projectId, `רישוי: ${permitLabel(prev)} ← ${permitLabel(stage)}`, `/projects/${pm.projectId}/permit`);
+    if (stage === 'granted') { const p = projectOf(db, pm.projectId)!; notify(db, p.leadId, { kind: 'system', title: 'ההיתר התקבל', body: p.name, link: `/projects/${p.id}/permit` }); }
+  },
+  deletePermit(db: DB, ctx: C, id: string) { db.permits = db.permits.filter((x) => x.id !== id); },
+  saveConsultant(db: DB, ctx: C, c: T.Consultant, isNew: boolean) { if (isNew) db.consultants.push(c); else db.consultants[db.consultants.findIndex((x) => x.id === c.id)] = c; },
+  addConsultants(db: DB, ctx: C, projectId: string, disciplines: string[]) {
+    disciplines.forEach((d) => db.consultants.push({ id: uid('cs'), projectId, discipline: d, name: '', phone: '', email: '', status: 'needed', notes: '' }));
+    logActivity(db, ctx, projectId, `הוספת ${disciplines.length} יועצים נדרשים`, `/projects/${projectId}/permit`);
+  },
+  deleteConsultant(db: DB, ctx: C, id: string) { db.consultants = db.consultants.filter((x) => x.id !== id); },
+  saveTimeEntry(db: DB, ctx: C, e: T.TimeEntry, isNew: boolean) { if (isNew) db.timeEntries.unshift(e); else db.timeEntries[db.timeEntries.findIndex((x) => x.id === e.id)] = e; },
+  deleteTimeEntry(db: DB, ctx: C, id: string) { db.timeEntries = db.timeEntries.filter((x) => x.id !== id); },
+  setRate(db: DB, ctx: C, userId: string, hourlyCost: number | null) {
+    db.memberRates = db.memberRates.filter((r) => r.userId !== userId);
+    if (hourlyCost != null) db.memberRates.push({ id: userId, userId, hourlyCost });
+  },
+  saveVisit(db: DB, ctx: C, v: T.SiteVisit, isNew: boolean) {
+    if (isNew) db.siteVisits.unshift(v); else db.siteVisits[db.siteVisits.findIndex((x) => x.id === v.id)] = v;
+    if (isNew) logActivity(db, ctx, v.projectId, `ביקור פיקוח באתר: ${v.date.split('-').reverse().join('.')}`, `/projects/${v.projectId}/site`);
+  },
+  deleteVisit(db: DB, ctx: C, id: string) { db.siteVisits = db.siteVisits.filter((x) => x.id !== id); db.siteFindings = db.siteFindings.filter((f) => f.visitId !== id); },
+  saveFinding(db: DB, ctx: C, f: T.SiteFinding, isNew: boolean) { if (isNew) db.siteFindings.push(f); else db.siteFindings[db.siteFindings.findIndex((x) => x.id === f.id)] = f; },
+  setFindingStatus(db: DB, ctx: C, id: string, status: T.FindingStatus) { byId(db.siteFindings, id)!.status = status; },
+  deleteFinding(db: DB, ctx: C, id: string) { db.siteFindings = db.siteFindings.filter((x) => x.id !== id); },
+  findingToTask(db: DB, ctx: C, findingId: string, taskId: string, assigneeId: string) {
+    const f = byId(db.siteFindings, findingId)!;
+    db.tasks.unshift({ id: taskId, projectId: f.projectId, title: `פיקוח: ${f.title}`.slice(0, 90), description: `${f.location ? 'מיקום: ' + f.location + '. ' : ''}${f.responsible ? 'באחריות: ' + f.responsible + '.' : ''}`, status: 'לביצוע', priority: f.severity === 'high' ? 'גבוהה' : 'בינונית', assigneeId, dueDate: f.dueOn || D(3), createdAt: todayISO, createdBy: ctx.me.id, tags: ['פיקוח'], comments: [], checklist: [] });
+    logActivity(db, ctx, f.projectId, `משימה מממצא פיקוח: ${f.title}`, '/tasks');
+  },
+  sendSiteReport(db: DB, ctx: C, visitId: string) {
+    const v = byId(db.siteVisits, visitId)!; v.status = 'sent'; v.sentAt = nowStamp();
+    const p = projectOf(db, v.projectId)!; const c = clientOf(db, p.clientId);
+    c?.contacts.filter((x) => x.portal === 'פעיל').forEach((x) => { simulateEmail(db, x.email, `דו"ח פיקוח: ${p.name}`, 'site_report', '/portal/site'); if (x.userId) notify(db, x.userId, { kind: 'meeting', title: 'דו"ח פיקוח חדש', body: p.name, link: '/portal/site' }); });
+    logActivity(db, ctx, v.projectId, `נשלח דו"ח פיקוח מ-${v.date.split('-').reverse().join('.')}`, `/projects/${v.projectId}/site`);
+  },
+  sendBrief(db: DB, ctx: C, projectId: string) {
+    let b = db.clientBriefs.find((x) => x.projectId === projectId);
+    if (!b) { b = { id: uid('cb'), projectId, status: 'sent', answers: {} }; db.clientBriefs.push(b); }
+    b.status = 'sent'; b.sentAt = todayISO;
+    const p = projectOf(db, projectId)!; const c = clientOf(db, p.clientId);
+    c?.contacts.filter((x) => x.portal === 'פעיל').forEach((x) => { simulateEmail(db, x.email, `שאלון פתיחה לפרויקט ${p.name}`, 'client_brief', '/portal/brief'); if (x.userId) notify(db, x.userId, { kind: 'approval', title: 'שאלון פתיחה מחכה לך', body: p.name, link: '/portal/brief' }); });
+    logActivity(db, ctx, projectId, 'שאלון הפתיחה נשלח ללקוח', `/projects/${projectId}/brief`);
+  },
+  /** the client saves (or submits) her answers */
+  saveBriefAnswers(db: DB, ctx: C, briefId: string, answers: T.ClientBrief['answers'], final: boolean) {
+    const b = byId(db.clientBriefs, briefId)!; b.answers = answers;
+    if (final) { b.status = 'submitted'; b.submittedAt = todayISO; const p = projectOf(db, b.projectId)!; notify(db, p.leadId, { kind: 'approval', title: 'הלקוח מילא את שאלון הפתיחה', body: p.name, link: `/projects/${p.id}/brief` }); logActivity(db, ctx, b.projectId, 'הלקוח שלח את שאלון הפתיחה', `/projects/${p.id}/brief`); }
+  },
+  saveMood(db: DB, ctx: C, m: T.MoodItem, isNew: boolean) { if (isNew) db.moodItems.push(m); else db.moodItems[db.moodItems.findIndex((x) => x.id === m.id)] = m; },
+  deleteMood(db: DB, ctx: C, id: string) { db.moodItems = db.moodItems.filter((x) => x.id !== id); },
+  toggleMoodShare(db: DB, ctx: C, id: string) { const m = byId(db.moodItems, id)!; m.shared = !m.shared; },
+  reactMood(db: DB, ctx: C, id: string, reaction: T.MoodItem['reaction'] | null, comment: string) {
+    const m = byId(db.moodItems, id)!; m.reaction = reaction || undefined; m.clientComment = comment;
+    const p = projectOf(db, m.projectId)!; if (reaction) notify(db, p.leadId, { kind: 'comment', title: `${ctx.me.name} הגיב/ה ללוח ההשראה`, body: `${m.title || 'פריט'}: ${reaction === 'love' ? 'אוהבים' : reaction === 'maybe' ? 'אולי' : 'לא בשבילנו'}`, link: `/projects/${p.id}/brief` });
+  },
+  saveLibrary(db: DB, ctx: C, item: T.LibraryItem, isNew: boolean) { if (isNew) db.libraryItems.unshift(item); else db.libraryItems[db.libraryItems.findIndex((x) => x.id === item.id)] = item; },
+  deleteLibrary(db: DB, ctx: C, id: string) { db.libraryItems = db.libraryItems.filter((x) => x.id !== id); },
+  libraryToSpec(db: DB, ctx: C, libId: string, specId: string, projectId: string, room: string, qty: number) {
+    const l = byId(db.libraryItems, libId)!;
+    db.specItems.push({ id: specId, projectId, room, category: l.category, name: l.name, supplierId: l.supplierId, sku: l.sku, qty, unit: l.unit, unitPrice: l.price || 0, notes: l.notes, status: 'טיוטה', swatch: '#D9D4C7', sharedWithClient: false, alternatives: [], leadTimeWeeks: 0 });
+    logActivity(db, ctx, projectId, `הוספה למפרט מהספרייה: ${l.name}`, `/specs/${projectId}`);
+  },
+  setBranding(db: DB, ctx: C, patch: Partial<T.Branding>) { db.branding = { ...(db.branding || {}), ...patch }; },
   // super admin
   setPlanPrice(db: DB, ctx: C, planId: string, field: 'priceMonthly' | 'priceYearlyPerMonth', value: number) {
     const p: any = byId(db.subscriptionPlans as any, planId); const from = p[field]; p[field] = value;

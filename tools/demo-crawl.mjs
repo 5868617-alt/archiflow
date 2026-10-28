@@ -3,13 +3,16 @@ const require = createRequire(import.meta.url);
 const { chromium } = (() => { try { return require('playwright'); } catch { return require((process.env.NODE_GLOBAL || '/home/claude/.npm-global/lib/node_modules') + '/playwright'); } })();
 const routes = {
   u_yoav: ['/dashboard', '/projects', '/projects?new=1', '/projects/p_cohen', '/projects/p_cohen/tasks', '/projects/p_cohen/plans', '/projects/p_cohen/specs', '/projects/p_cohen/documents', '/projects/p_cohen/meetings', '/projects/p_cohen/procurement', '/projects/p_cohen/budget', '/projects/p_cohen/fees', '/projects/p_cohen/approvals', '/projects/p_cohen/team', '/projects/p_cohen/messages', '/projects/p_cohen/activity', '/projects/p_rosen', '/projects/p_hanamal',
+    '/projects/p_cohen/phases', '/projects/p_cohen/brief', '/projects/p_cohen/permit', '/projects/p_cohen/site', '/projects/p_mizrahi/permit', '/projects/p_mizrahi/phases', '/projects/p_rosen/brief', '/projects/p_garin/site',
+    '/time', '/time?tab=team', '/time?tab=profit', '/time?tab=rates', '/time?log=1', '/library',
     '/clients', '/clients/cl_cohen', '/tasks', '/tasks?tab=kanban', '/tasks?tab=calendar', '/tasks?tab=templates', '/tasks?open=t1', '/plans', '/plans/pl_cohen_floor', '/plans/pl_cohen_floor/compare', '/plans/pl_cohen_elec', '/plans/pl_ohayon_exist', '/plans/pl_cohen_bath', '/plans?upload=1',
     '/specs', '/specs/p_cohen', '/specs/p_mizrahi', '/documents', '/documents/doc_c1', '/documents/doc_f2', '/approvals', '/approvals?open=ap_1', '/calendar', '/calendar?view=month', '/calendar?view=day', '/calendar?new=1', '/meetings/mt_4', '/meetings/mt_1',
     '/suppliers', '/suppliers/sup_hadar', '/procurement', '/procurement/po_4', '/procurement?new=1', '/budget', '/expenses', '/expenses?new=1', '/fees', '/team', '/team?tab=perms', '/team?tab=assign', '/team?tab=invites', '/team/u_shira', '/messages', '/notifications', '/notifications?tab=email', '/notifications?tab=prefs',
     '/settings', '/settings?tab=integrations', '/settings?tab=security', '/profile', '/billing', '/billing/change', '/billing/cancel', '/billing/invoices/inv0', '/pricing', '/help', '/help/h1', '/support', '/support/tk1', '/portal', '/nope'],
   u_michal: ['/dashboard', '/billing', '/billing/change?plan=starter', '/team?tab=perms'],
-  u_shira: ['/dashboard', '/projects', '/projects/p_rosen', '/budget', '/billing', '/projects/p_cohen/budget', '/documents/doc_c1', '/tasks'],
-  cu_dana: ['/portal', '/portal/approvals', '/portal/drawings', '/portal/drawings/pl_cohen_floor', '/portal/drawings/pl_cohen_elec', '/portal/documents', '/portal/meetings', '/portal/messages', '/portal/history', '/portal/notifications', '/dashboard'],
+  u_shira: ['/dashboard', '/projects', '/projects/p_rosen', '/budget', '/billing', '/projects/p_cohen/budget', '/documents/doc_c1', '/tasks', '/time', '/time?tab=rates', '/projects/p_cohen/phases', '/library'],
+  cu_dana: ['/portal', '/portal/approvals', '/portal/drawings', '/portal/drawings/pl_cohen_floor', '/portal/drawings/pl_cohen_elec', '/portal/documents', '/portal/meetings', '/portal/messages', '/portal/history', '/portal/notifications', '/portal/brief', '/portal/inspiration', '/portal/site', '/dashboard'],
+  cu_nurit: ['/portal', '/portal/brief', '/portal/inspiration'],
   cu_yael: ['/portal', '/portal/approvals'],
   sa_ron: ['/admin', '/admin/usage', '/admin/offices', '/admin/offices/off_1', '/admin/offices/off_5', '/admin/users', '/admin/users/u_noa', '/admin/subscriptions', '/admin/pricing', '/admin/pricing-log', '/admin/tickets', '/admin/tickets/tk1', '/admin/announcements', '/admin/events', '/admin/audit', '/admin/retention', '/admin/settings', '/dashboard'],
   anon: ['/login', '/register', '/forgot', '/onboarding', '/pricing'],

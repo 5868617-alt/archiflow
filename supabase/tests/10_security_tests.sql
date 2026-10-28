@@ -388,3 +388,176 @@ begin;
 select tests.login('yoav');
 select tests.ok((public.app_snapshot('a0000000-0000-4000-8000-000000000001') -> 'plan_annotations' -> 0 ->> 'body') is not null, 'snapshot returns annotation records (not a column named x)');
 rollback;
+
+\echo '--- architect workflow: phases, permit, consultants'
+begin;
+insert into public.project_phases (id, office_id, project_id, idx, name, status) values
+  ('f1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 0, 'פרוגרמה', 'done'),
+  ('f1000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 0, 'פרוגרמה', 'active'),
+  ('f1000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000002', 'e0000000-0000-4000-8000-000000000011', 0, 'פרוגרמה', 'active');
+insert into public.permits (id, office_id, project_id, authority, stage) values
+  ('f2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'עיריית תל אביב-יפו', 'submitted');
+insert into public.project_consultants (id, office_id, project_id, discipline) values
+  ('f3000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'קונסטרוקציה');
+select tests.login('shira');
+select tests.allowed($$insert into public.project_phases (office_id, project_id, idx, name) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 1, 'תכנון מוקדם')$$, 'assigned member adds a phase');
+select tests.ok(tests.n('select * from public.project_phases where project_id = ''e0000000-0000-4000-8000-000000000002''') = 0, 'member does not see phases of an unassigned project');
+select tests.denied($$insert into public.project_phases (office_id, project_id, idx, name) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 1, 'x')$$, 'member cannot add phases to an unassigned project');
+select tests.denied($$insert into public.project_phases (office_id, project_id, idx, name) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000011', 1, 'x')$$, 'cannot attach a phase to another office''s project');
+select tests.allowed($$update public.permits set stage = 'review' where id = 'f2000000-0000-4000-8000-000000000001'$$, 'assigned member moves the permit stage');
+select tests.denied($$update public.permits set stage = 'approved' where id = 'f2000000-0000-4000-8000-000000000001'$$, 'unknown permit stage rejected');
+select tests.ok(tests.n('select * from public.project_consultants') = 1, 'member sees consultants of her project');
+select tests.login('michal');
+select tests.denied($$update public.fee_milestones set phase_id = 'f1000000-0000-4000-8000-000000000002' where project_id = 'e0000000-0000-4000-8000-000000000001'$$, 'a fee cannot point to a phase of another project');
+select tests.allowed($$update public.fee_milestones set phase_id = 'f1000000-0000-4000-8000-000000000001' where project_id = 'e0000000-0000-4000-8000-000000000001'$$, 'owner links fees to a phase of the same project');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.project_phases') = 2, 'client sees the phases of her own project only');
+select tests.ok(tests.n('select * from public.permits') = 1, 'client follows the permit of her project');
+select tests.ok(tests.n('select * from public.project_consultants') = 0, 'client does not see consultants');
+select tests.denied($$update public.project_phases set status = 'done' where project_id = 'e0000000-0000-4000-8000-000000000001'$$, 'client cannot change phases');
+select tests.denied($$update public.permits set stage = 'granted'$$, 'client cannot change the permit');
+select tests.login('avital');
+select tests.ok(tests.n('select * from public.project_phases') = 1 and tests.n('select * from public.permits') = 0, 'no leak of phases or permits between offices');
+select tests.login('anon');
+select tests.denied('select * from public.project_phases', 'anon cannot read phases');
+select tests.denied('select * from public.permits', 'anon cannot read permits');
+rollback;
+
+\echo '--- architect workflow: time tracking and cost rates'
+begin;
+insert into public.time_entries (office_id, project_id, user_id, hours) values
+  ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000004', 3),
+  ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', '11111111-0000-4000-8000-000000000001', 5);
+select tests.login('shira');
+select tests.allowed($$insert into public.time_entries (office_id, project_id, hours, note) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 2.5, 'תכניות עבודה')$$, 'member logs her own hours');
+select tests.denied($$insert into public.time_entries (office_id, project_id, user_id, hours) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000004', 8)$$, 'member cannot log hours for someone else');
+select tests.denied($$insert into public.time_entries (office_id, project_id, hours) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 1)$$, 'member cannot log hours on an unassigned project');
+select tests.denied($$insert into public.time_entries (office_id, project_id, hours) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 30)$$, 'more than 24 hours a day rejected');
+select tests.ok(tests.n('select * from public.time_entries') = 1, 'member sees only her own hours');
+select tests.denied($$update public.time_entries set hours = 1 where user_id = '11111111-0000-4000-8000-000000000004'$$, 'member cannot edit a colleague''s hours');
+select tests.denied($$update public.time_entries set user_id = '11111111-0000-4000-8000-000000000004' where user_id = auth.uid()$$, 'member cannot move her hours to someone else');
+select tests.ok(tests.n('select * from public.member_rates') = 0, 'member does not see cost rates');
+select tests.denied($$insert into public.member_rates (office_id, user_id, hourly_cost) values ('a0000000-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000005', 500)$$, 'member cannot set her own cost rate');
+select tests.login('yoav');
+select tests.ok(tests.n('select * from public.time_entries') = 3, 'office manager sees the whole office''s hours');
+select tests.allowed($$insert into public.member_rates (office_id, user_id, hourly_cost) values ('a0000000-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000005', 140)$$, 'manager sets a cost rate');
+select tests.denied($$insert into public.member_rates (office_id, user_id, hourly_cost) values ('a0000000-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000031', 140)$$, 'cost rate only for members of the office');
+select tests.allowed($$update public.time_entries set hours = 4 where user_id = '11111111-0000-4000-8000-000000000004'$$, 'manager corrects hours');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.time_entries') = 0 and tests.n('select * from public.member_rates') = 0, 'clients see no hours and no rates');
+select tests.login('avital');
+select tests.ok(tests.n('select * from public.time_entries') = 0 and tests.n('select * from public.member_rates') = 0, 'no leak of hours or rates between offices');
+select tests.denied($$insert into public.time_entries (office_id, project_id, hours) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 1)$$, 'cannot log hours into another office');
+select tests.login('anon');
+select tests.denied('select * from public.time_entries', 'anon cannot read hours');
+rollback;
+
+\echo '--- architect workflow: site supervision'
+begin;
+insert into public.site_visits (id, office_id, project_id, summary) values
+  ('f4000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'draft visit'),
+  ('f4000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000002', 'other project');
+insert into storage.objects (bucket_id, name) values ('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/x/crack.jpg');
+insert into public.site_findings (id, office_id, project_id, visit_id, title, photo_path) values
+  ('f5000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'f4000000-0000-4000-8000-000000000001', 'סדק בטיח', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/x/crack.jpg');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.site_visits') = 0 and tests.n('select * from public.site_findings') = 0, 'client does not see a draft site report');
+select tests.ok(not private.storage_can_read('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/x/crack.jpg'), 'client cannot open photos of a draft report');
+select tests.ok(tests.n($q$select * from storage.objects where bucket_id = 'site-photos'$q$) = 0, 'no photo object visible to the client before the report is sent');
+select tests.denied($$select public.send_site_report('f4000000-0000-4000-8000-000000000001')$$, 'client cannot send a site report');
+select tests.login('shira');
+select tests.denied($$insert into public.site_findings (office_id, project_id, visit_id, title) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'f4000000-0000-4000-8000-000000000002', 'x')$$, 'a finding cannot point to a visit of another project');
+select tests.denied($$select public.send_site_report('f4000000-0000-4000-8000-000000000002')$$, 'member cannot send the report of an unassigned project');
+select tests.ok(private.storage_can_write('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/new/p.jpg'), 'member uploads site photos to her project');
+select tests.ok(not private.storage_can_write('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000002/new/p.jpg'), 'member cannot upload photos to an unassigned project');
+select tests.allowed($$select public.send_site_report('f4000000-0000-4000-8000-000000000001')$$, 'member sends the site report of her project');
+select tests.ok((select status from public.site_visits where id = 'f4000000-0000-4000-8000-000000000001') = 'sent', 'report marked as sent');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.site_visits') = 1 and tests.n('select * from public.site_findings') = 1, 'client sees the sent report and its findings');
+select tests.ok(private.storage_can_read('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/x/crack.jpg'), 'client opens the photos of a sent report');
+select tests.ok(tests.n($q$select * from storage.objects where bucket_id = 'site-photos'$q$) = 1, 'the storage policy itself lets the client read the photo object');
+select tests.denied($$update public.site_findings set status = 'verified'$$, 'client cannot change findings');
+select tests.login('avital');
+select tests.ok(tests.n('select * from public.site_visits') = 0, 'no leak of site visits between offices');
+select tests.ok(not private.storage_can_read('site-photos', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/x/crack.jpg'), 'another office cannot open site photos');
+select tests.ok(tests.n($q$select * from storage.objects where bucket_id = 'site-photos'$q$) = 0, 'another office sees no photo objects');
+rollback;
+
+\echo '--- architect workflow: client brief and mood board'
+begin;
+insert into public.client_briefs (id, office_id, project_id, status) values
+  ('f6000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'draft'),
+  ('f6000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000003', 'sent');
+insert into public.mood_items (id, office_id, project_id, kind, title, shared, image_path) values
+  ('f7000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'image', 'מטבח', true, 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/m/k.jpg'),
+  ('f7000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'image', 'טיוטה', false, 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/m/d.jpg');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.client_briefs') = 0, 'client does not see a brief that was not sent');
+select tests.denied($$select public.submit_client_brief('f6000000-0000-4000-8000-000000000001', '{"a":1}')$$, 'client cannot answer a brief that was not sent');
+select tests.denied($$select public.submit_client_brief('f6000000-0000-4000-8000-000000000003', '{"a":1}', true)$$, 'client cannot answer the brief of another client''s project');
+select tests.ok(tests.n('select * from public.mood_items') = 1, 'client sees only shared mood board items');
+select tests.ok(private.storage_can_read('moodboard', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/m/k.jpg')
+  and not private.storage_can_read('moodboard', 'a0000000-0000-4000-8000-000000000001/e0000000-0000-4000-8000-000000000001/m/d.jpg'), 'client opens shared mood images only');
+select tests.allowed($$select public.react_mood_item('f7000000-0000-4000-8000-000000000001', 'love', 'מושלם')$$, 'client reacts to a shared item');
+select tests.denied($$select public.react_mood_item('f7000000-0000-4000-8000-000000000002', 'love')$$, 'client cannot react to an unshared item');
+select tests.denied($$select public.react_mood_item('f7000000-0000-4000-8000-000000000001', 'hate')$$, 'unknown reaction rejected');
+select tests.denied($$update public.mood_items set title = 'x'$$, 'client cannot edit mood items directly');
+select tests.denied($$update public.client_briefs set status = 'submitted'$$, 'client cannot edit the brief directly');
+select tests.denied($$insert into public.mood_items (office_id, project_id, title) values ('a0000000-0000-4000-8000-000000000001', 'e0000000-0000-4000-8000-000000000001', 'x')$$, 'client cannot add mood items');
+select tests.login('yael');
+select tests.allowed($$select public.submit_client_brief('f6000000-0000-4000-8000-000000000003', '{"family":"זוג ושני ילדים"}', true)$$, 'client submits the brief of her project');
+select tests.ok((select status from public.client_briefs where id = 'f6000000-0000-4000-8000-000000000003') = 'submitted', 'brief marked as submitted');
+select tests.denied($$select public.submit_client_brief('f6000000-0000-4000-8000-000000000003', '{"x":1}')$$, 'a submitted brief is locked');
+select tests.ok(tests.n('select * from public.mood_items') = 0, 'clients see no other project''s mood board');
+select tests.login('shira');
+select tests.allowed($$select public.send_client_brief('e0000000-0000-4000-8000-000000000001')$$, 'assigned member sends the brief');
+select tests.ok((select status from public.client_briefs where id = 'f6000000-0000-4000-8000-000000000001') = 'sent', 'brief opened to the client');
+select tests.denied($$select public.send_client_brief('e0000000-0000-4000-8000-000000000002')$$, 'member cannot send a brief for an unassigned project');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.client_briefs') = 1, 'client now sees the sent brief');
+select tests.ok(exists (select 1 from public.notifications where link = '/portal/brief'), 'client was notified about the brief');
+select tests.allowed($$select public.submit_client_brief('f6000000-0000-4000-8000-000000000001', '{"style":["מינימליסטי"]}')$$, 'client saves a draft of her answers');
+select tests.denied($$select public.send_client_brief('e0000000-0000-4000-8000-000000000001')$$, 'client cannot send briefs');
+select tests.login('avital');
+select tests.ok(tests.n('select * from public.client_briefs') = 0 and tests.n('select * from public.mood_items') = 0, 'no leak of briefs or mood boards between offices');
+select tests.login('anon');
+select tests.denied($$select public.react_mood_item('f7000000-0000-4000-8000-000000000001', 'love')$$, 'anon cannot react');
+rollback;
+
+\echo '--- architect workflow: library and branding'
+begin;
+insert into public.library_items (id, office_id, name, supplier_id, image_path) values
+  ('f8000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'אריח טראצו', 'b0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001/office/l/t.jpg');
+insert into public.suppliers (id, office_id, name) values ('b0000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000002', 'ספק משרד אחר');
+update public.office_settings set brand_color = '#3D2233', logo_path = 'a0000000-0000-4000-8000-000000000001/office/b/logo.png' where office_id = 'a0000000-0000-4000-8000-000000000001';
+select tests.login('shira');
+select tests.ok(tests.n('select * from public.library_items') = 1, 'every team member sees the studio library');
+select tests.allowed($$insert into public.library_items (office_id, name, category) values ('a0000000-0000-4000-8000-000000000001', 'ברז מטבח', 'כלים סניטריים')$$, 'member adds to the library');
+select tests.ok(private.storage_can_write('library', 'a0000000-0000-4000-8000-000000000001/office/new/x.jpg'), 'member uploads library images');
+select tests.ok(not private.storage_can_write('branding', 'a0000000-0000-4000-8000-000000000001/office/new/logo.png'), 'member cannot replace the studio logo');
+select tests.denied($$update public.office_settings set brand_color = '#000000'$$, 'member cannot change the brand color');
+select tests.denied($$select public.set_office_branding('a0000000-0000-4000-8000-000000000001', '#000000', null)$$, 'member cannot call set_office_branding');
+select tests.login('yoav');
+select tests.allowed($$select public.set_office_branding('a0000000-0000-4000-8000-000000000001', '#1F3A5F', 'a0000000-0000-4000-8000-000000000001/office/b/logo.png')$$, 'office manager sets the branding');
+select tests.ok((select brand_color from public.office_settings where office_id = 'a0000000-0000-4000-8000-000000000001') = '#1F3A5F', 'brand color stored');
+select tests.denied($$select public.set_office_branding('a0000000-0000-4000-8000-000000000001', '#1F3A5F', 'a0000000-0000-4000-8000-000000000002/office/b/logo.png')$$, 'logo must live in the studio''s own folder');
+select tests.denied($$select public.set_office_branding('a0000000-0000-4000-8000-000000000002', '#1F3A5F', null)$$, 'cannot brand another office');
+select tests.denied($$select public.set_office_branding('a0000000-0000-4000-8000-000000000001', 'javascript:x', null)$$, 'invalid color rejected');
+select tests.login('michal');
+select tests.ok(private.storage_can_write('branding', 'a0000000-0000-4000-8000-000000000001/office/new/logo.png'), 'owner uploads the studio logo');
+select tests.denied($$update public.office_settings set brand_color = 'red' where office_id = 'a0000000-0000-4000-8000-000000000001'$$, 'brand color must be a hex color');
+select tests.denied($$insert into public.library_items (office_id, name, supplier_id) values ('a0000000-0000-4000-8000-000000000001', 'x', 'b0000000-0000-4000-8000-000000000011')$$, 'library cannot point to another office''s supplier');
+select tests.denied($$insert into public.library_items (office_id, name, url) values ('a0000000-0000-4000-8000-000000000001', 'x', 'javascript:alert(1)')$$, 'library links must be web addresses');
+select tests.login('dana');
+select tests.ok(tests.n('select * from public.library_items') = 0, 'clients do not see the studio library');
+select tests.ok((public.office_branding('a0000000-0000-4000-8000-000000000001') ->> 'brand_color') = '#1F3A5F', 'client gets her studio''s branding');
+select tests.ok(public.office_branding('a0000000-0000-4000-8000-000000000002') is null, 'client gets no branding of another studio');
+select tests.ok(private.storage_can_read('branding', 'a0000000-0000-4000-8000-000000000001/office/b/logo.png'), 'client sees the studio logo');
+select tests.ok(not private.storage_can_read('library', 'a0000000-0000-4000-8000-000000000001/office/l/t.jpg'), 'client cannot open library images');
+select tests.login('avital');
+select tests.ok(tests.n('select * from public.library_items') = 0, 'no leak of the library between offices');
+select tests.ok(not private.storage_can_read('branding', 'a0000000-0000-4000-8000-000000000001/office/b/logo.png') and public.office_branding('a0000000-0000-4000-8000-000000000001') is null, 'another office cannot read the branding');
+select tests.ok(not private.storage_can_write('library', 'a0000000-0000-4000-8000-000000000001/office/new/x.jpg'), 'another office cannot upload into the library');
+select tests.login('ori');
+select tests.ok((public.app_snapshot('a0000000-0000-4000-8000-000000000001') ->> 'branding') is not null, 'snapshot carries the studio branding');
+rollback;

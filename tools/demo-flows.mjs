@@ -131,6 +131,65 @@ await page.click('.modal-foot .btn.primary');
 await page.waitForTimeout(200);
 log((await getDb()).db.notifications.some((n) => n.title.includes('חריגה בסעיף נגרות')), 'budget alert notification');
 
+// 11b architect workflow
+await go('/projects/p_ohayon/phases', 'u_yoav');
+await page.click('.phase-row.active >> text=סיום שלב');
+await page.click('.modal-foot .btn.primary');
+await page.waitForTimeout(200);
+{ const d = (await getDb()).db; const ph = d.projectPhases.filter((x) => x.projectId === 'p_ohayon');
+  log(ph.find((x) => x.idx === 2).status === 'done' && ph.find((x) => x.idx === 3).status === 'active', 'finish phase opens the next one');
+  log(d.feeMilestones.some((f) => f.phaseId === 'ph_p_ohayon_2' && f.status === 'נשלחה דרישה'), 'finishing a phase sends its fee request'); }
+await go('/time?log=1', 'u_yoav');
+await page.selectOption('#te-p', 'p_cohen');
+await page.fill('#te-h', '2.5');
+await page.fill('#te-n', 'בדיקת זרימה – שעות');
+await page.click('.modal-foot .btn.primary');
+await page.waitForTimeout(200);
+log((await getDb()).db.timeEntries.some((e) => e.note === 'בדיקת זרימה – שעות' && e.hours === 2.5 && e.userId === 'u_yoav' && e.phaseIdx === 5), 'time logged on the active phase');
+await go('/time?tab=rates', 'u_yoav');
+await page.fill('#rate-u_shira', '120');
+await page.click('text=שמירה (1)');
+await page.waitForTimeout(200);
+log((await getDb()).db.memberRates.some((r) => r.userId === 'u_shira' && r.hourlyCost === 120), 'cost rate saved');
+await go('/time?tab=rates', 'u_shira');
+log(!(await page.isVisible('text=תעריף עלות לשעה')), 'members do not see cost rates');
+await go('/projects/p_cohen/site', 'u_yoav');
+await page.click('.li.click >> nth=0');
+await page.getByRole('button', { name: 'ממצא', exact: true }).click();
+await page.fill('#ff-t', 'בדיקת זרימה – ממצא');
+await page.click('.modal-foot .btn.primary');
+await page.waitForTimeout(150);
+await page.click('text=שליחה ללקוח');
+await page.click('.modal-foot >> text=שליחה');
+await page.waitForTimeout(200);
+{ const d = (await getDb()).db; log(d.siteFindings.some((f) => f.title === 'בדיקת זרימה – ממצא' && f.visitId === 'sv_c2') && d.siteVisits.find((v) => v.id === 'sv_c2').status === 'sent' && d.emailLog.some((e) => e.template === 'site_report'), 'site finding added and report sent (simulated e-mail)'); }
+await go('/portal/site', 'cu_dana');
+log(await page.isVisible('text=בדיקת זרימה – ממצא'), 'client sees the sent site report');
+await go('/portal/inspiration', 'cu_dana');
+await page.locator('.mood', { hasText: 'פליז מוברש' }).locator('.react-btn.love').click();
+await page.waitForTimeout(150);
+log((await getDb()).db.moodItems.find((m) => m.id === 'mi4').reaction === 'love', 'client reacts to the mood board');
+log(!(await page.isVisible('text=רעיון פנימי')), 'client does not see private mood items');
+await go('/portal/brief', 'cu_nurit');
+await page.fill('#bq-routine', 'בדיקת זרימה – שגרה');
+await page.click('.brief-q >> text=ים תיכוני');
+await page.click('text=שליחה למשרד');
+await page.click('.modal-foot >> text=שליחה');
+await page.waitForTimeout(200);
+{ const b = (await getDb()).db.clientBriefs.find((x) => x.id === 'cb_stern'); log(b.status === 'submitted' && b.answers.routine === 'בדיקת זרימה – שגרה' && b.answers.style.includes('ים תיכוני'), 'client submits the brief'); }
+await go('/library', 'u_yoav');
+await page.click('.lib-card >> nth=0 >> text=למפרט של פרויקט');
+await page.selectOption('#ts-p', 'p_cohen');
+await page.fill('#ts-r', 'בדיקת זרימה');
+await page.click('.modal-foot .btn.primary');
+await page.waitForTimeout(200);
+log((await getDb()).db.specItems.some((x) => x.projectId === 'p_cohen' && x.room === 'בדיקת זרימה' && x.status === 'טיוטה' && x.unitPrice === 289), 'library item added to a spec as draft');
+await go('/settings', 'u_yoav');
+await page.click('button[aria-label="צבע #1F3A5F"]');
+await page.click('text=שמירת הצבע');
+await page.waitForTimeout(150);
+log((await getDb()).db.branding.color === '#1F3A5F', 'brand color saved');
+
 // 12 reset
 await page.click('text=איפוס נתוני הדגמה');
 await page.click('.demo-strip >> text=כן, אפס');

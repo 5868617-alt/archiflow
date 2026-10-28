@@ -33,6 +33,21 @@ export async function push(c: PushCtx, before: any, after: any): Promise<void> {
     case 'changePlan': { const [planId, cycle] = c.args; await api.rpc('request_plan_change', { p_office: officeId, p_plan: planId, p_cycle: E.cycle.db(cycle) }); return; }
     case 'cancelSubscription': { await api.rpc('request_cancellation', { p_office: officeId, p_reason: c.args[0] }); return; }
     case 'resumeSubscription': { await api.rpc('resume_subscription', { p_office: officeId }); return; }
+    case 'sendSiteReport': await api.rpc('send_site_report', { p_visit: c.args[0] }); return;
+    case 'sendBrief': await api.rpc('send_client_brief', { p_project: c.args[0] }); return;
+    case 'saveBriefAnswers': { const [briefId, answers, final] = c.args; await api.rpc('submit_client_brief', { p_brief: briefId, p_answers: answers, p_final: !!final }); return; }
+    case 'reactMood': { const [id, reaction, comment] = c.args; await api.rpc('react_mood_item', { p_item: id, p_reaction: reaction || null, p_comment: comment || '' }); return; }
+    case 'setRate': {
+      const [userId, cost] = c.args;
+      if (cost == null) await api.remove('member_rates', { office_id: officeId, user_id: userId });
+      else await api.upsert('member_rates', [{ office_id: officeId, user_id: userId, hourly_cost: cost }], 'office_id,user_id');
+      return;
+    }
+    case 'setBranding': {
+      const b = after.branding || {};
+      await api.rpc('set_office_branding', { p_office: officeId, p_color: b.color || null, p_logo: b.logo || null });
+      return;
+    }
     case 'setOfficeStatus': { const [oid, status, note] = c.args; await api.rpc('admin_set_subscription_status', { p_office: oid, p_status: E.sub.db(status), p_note: note || 'שינוי ידני מקונסולת הניהול' }); return; }
   }
 
@@ -266,7 +281,16 @@ export async function push(c: PushCtx, before: any, after: any): Promise<void> {
   simple(ops, api, before.suppliers, after.suppliers, 'suppliers', (x: any) => withOffice(toRow.supplier(x)));
   simple(ops, api, before.budgetLines, after.budgetLines, 'budget_lines', (x: any) => withOffice(toRow.budgetLine(x)));
   simple(ops, api, before.expenses, after.expenses, 'expenses', (x: any) => withOffice({ ...toRow.expense(x), created_by: me.id }), ['created_by']);
+  // phases go first (fees point to them); removals first so a re-applied template can reuse the same numbers
+  simple(ops, api, before.projectPhases, after.projectPhases, 'project_phases', (x: any) => withOffice(toRow.phase(x)), [], true);
   simple(ops, api, before.feeMilestones, after.feeMilestones, 'fee_milestones', (x: any) => withOffice(toRow.fee(x)));
+  simple(ops, api, before.permits, after.permits, 'permits', (x: any) => withOffice(toRow.permit(x)));
+  simple(ops, api, before.consultants, after.consultants, 'project_consultants', (x: any) => withOffice(toRow.consultant(x)));
+  simple(ops, api, before.timeEntries, after.timeEntries, 'time_entries', (x: any) => withOffice(toRow.timeEntry(x)));
+  simple(ops, api, before.siteVisits, after.siteVisits, 'site_visits', (x: any) => withOffice({ ...toRow.visit(x), created_by: me.id }), ['created_by']);
+  simple(ops, api, before.siteFindings, after.siteFindings, 'site_findings', (x: any) => withOffice(toRow.finding(x)));
+  simple(ops, api, before.moodItems, after.moodItems, 'mood_items', (x: any) => withOffice(toRow.mood(x)));
+  simple(ops, api, before.libraryItems, after.libraryItems, 'library_items', (x: any) => withOffice(toRow.library(x)));
 
   // ---------------------------------------------------------- purchase orders (+ items)
   {
@@ -376,8 +400,9 @@ export async function push(c: PushCtx, before: any, after: any): Promise<void> {
   for (const op of ops) await op();
 }
 
-function simple(ops: Op[], api: Supa, before: any[] = [], after: any[] = [], table: string, row: (x: any) => any, insertOnlyCols: string[] = []) {
+function simple(ops: Op[], api: Supa, before: any[] = [], after: any[] = [], table: string, row: (x: any) => any, insertOnlyCols: string[] = [], removeFirst = false) {
   const A = mapById(before), B = mapById(after);
+  if (removeFirst) for (const x of before) if (!B.has(x.id)) ops.push(() => api.remove(table, { id: x.id }));
   for (const x of after) {
     const o = A.get(x.id);
     if (!o) { ops.push(() => api.insert(table, row(x))); continue; }
@@ -385,7 +410,7 @@ function simple(ops: Op[], api: Supa, before: any[] = [], after: any[] = [], tab
     const patch = patchOf(row(o), row(x)); delete patch.id; delete patch.office_id; for (const k of insertOnlyCols) delete patch[k];
     if (Object.keys(patch).length) ops.push(() => api.update(table, { id: x.id }, patch));
   }
-  for (const x of before) if (!B.has(x.id)) ops.push(() => api.remove(table, { id: x.id }));
+  if (!removeFirst) for (const x of before) if (!B.has(x.id)) ops.push(() => api.remove(table, { id: x.id }));
 }
 function diffChildren<X extends { id: string }>(ops: Op[], api: Supa, before: X[] = [], after: X[] = [], table: string, row: (x: X) => any) {
   const A = mapById(before), B = mapById(after);

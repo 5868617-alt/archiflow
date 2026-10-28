@@ -79,7 +79,7 @@ function audit(mobile) {
   if (!document.querySelector('main, [role=main]')) add('no-main', document.body);
   // touch targets on phones (WCAG 2.5.8: 24px minimum; we aim for 40)
   if (mobile) for (const el of document.querySelectorAll('button, a[href], select, input:not([type=hidden]):not([type=checkbox]):not([type=radio])')) {
-    if (!visible(el) || el.closest('.tbl-stack td') && el.tagName === 'A') continue;
+    if (!visible(el) || el.classList.contains('sr-only') || el.closest('.tbl-stack td') && el.tagName === 'A') continue;
     const r = el.getBoundingClientRect(); if (r.height < 24 || r.width < 24) add('target', el, `${Math.round(r.width)}×${Math.round(r.height)}`);
   }
   return out;

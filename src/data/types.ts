@@ -116,7 +116,7 @@ export interface BudgetLine { id: string; projectId: string; category: string; p
 export interface Expense { id: string; projectId: string; date: string; category: string; description: string; supplierId: string | null; poId: string | null; amount: number; receipt: string | null; status: 'שולם' | 'ממתין לתשלום'; paidBy: 'לקוח ישירות' | 'דרך המשרד'; }
 
 /** table: fee_milestones (studio's own fee) */
-export interface FeeMilestone { id: string; projectId: string; title: string; pct: number; amount: number; dueDate: string; status: 'שולם' | 'נשלחה דרישה' | 'עתידי' | 'באיחור'; paidAt?: string; }
+export interface FeeMilestone { id: string; projectId: string; title: string; pct: number; amount: number; dueDate: string; status: 'שולם' | 'נשלחה דרישה' | 'עתידי' | 'באיחור'; paidAt?: string; phaseId?: string; }
 
 /** table: notifications */
 export interface Notification { id: string; userId: string; kind: 'approval' | 'task' | 'meeting' | 'budget' | 'comment' | 'system' | 'plan'; title: string; body: string; link: string; at: string; read: boolean; }
@@ -154,3 +154,30 @@ export interface SystemEvent { id: string; at: string; level: 'info' | 'warn' | 
 export interface Announcement { id: string; title: string; body: string; audience: string; status: 'טיוטה' | 'פורסם' | 'מתוזמן'; at: string; }
 /** platform-level: offices directory (super admin) */
 export interface PlatformOffice { id: string; name: string; city: string; ownerName: string; ownerEmail: string; planId: 'starter' | 'pro'; status: OfficeSubscription['status']; users: number; projects: number; storageGb: number; createdAt: string; lastActive: string; mrr: number; }
+
+// ---------------------------------------------------------------- architect workflow (migration 012)
+/** table: project_phases – the studio's design phases for one project (fees stay in fee_milestones) */
+export type PhaseStatus = 'upcoming' | 'active' | 'done';
+export interface ProjectPhase { id: string; projectId: string; idx: number; name: string; status: PhaseStatus; budgetHours: number | null; startedOn?: string; doneOn?: string; }
+/** table: permits */
+export type PermitStage = 'info_file' | 'preparing' | 'submitted' | 'review' | 'committee' | 'conditions' | 'granted' | 'rejected';
+export interface Permit { id: string; projectId: string; authority: string; fileNumber: string; requestType: string; stage: PermitStage; infoFileOn?: string; submittedOn?: string; committeeOn?: string; grantedOn?: string; expiresOn?: string; notes: string; }
+/** table: project_consultants */
+export type ConsultantStatus = 'needed' | 'engaged' | 'delivered';
+export interface Consultant { id: string; projectId: string; discipline: string; name: string; phone: string; email: string; status: ConsultantStatus; dueOn?: string; notes: string; }
+/** table: time_entries */
+export interface TimeEntry { id: string; projectId: string; userId: string; date: string; hours: number; phaseIdx: number | null; note: string; }
+/** table: member_rates (managers only) – id is the user id */
+export interface MemberRate { id: string; userId: string; hourlyCost: number; }
+/** table: site_visits + site_findings */
+export interface SiteVisit { id: string; projectId: string; date: string; attendees: string; summary: string; status: 'draft' | 'sent'; sentAt?: string; createdBy: string; }
+export type FindingStatus = 'open' | 'fixed' | 'verified';
+export interface SiteFinding { id: string; projectId: string; visitId: string; title: string; location: string; responsible: string; dueOn?: string; severity: 'low' | 'medium' | 'high'; status: FindingStatus; photo?: string; }
+/** table: client_briefs */
+export interface ClientBrief { id: string; projectId: string; status: 'draft' | 'sent' | 'submitted'; answers: Record<string, string | string[]>; sentAt?: string; submittedAt?: string; }
+/** table: mood_items */
+export interface MoodItem { id: string; projectId: string; kind: 'image' | 'color' | 'note'; title: string; note: string; color?: string; image?: string; shared: boolean; reaction?: 'love' | 'maybe' | 'no'; clientComment: string; sort: number; }
+/** table: library_items – the studio's own materials and products */
+export interface LibraryItem { id: string; name: string; category: string; supplierId: string; sku: string; unit: string; price: number | null; image?: string; url: string; notes: string; tags: string[]; }
+/** office_settings.brand_color / logo_path */
+export interface Branding { color?: string; logo?: string; }

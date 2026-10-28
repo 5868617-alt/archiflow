@@ -1,6 +1,6 @@
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
-import { LuLayoutDashboard, LuFolderKanban, LuUsers, LuListChecks, LuCalendarDays, LuPencilRuler, LuLayers, LuFileText, LuBadgeCheck, LuTruck, LuShoppingCart, LuWallet, LuCoins, LuUserCog, LuMessagesSquare, LuBell, LuSettings, LuCreditCard, LuLifeBuoy, LuMenu, LuLock, LuPlus, LuCalendarPlus, LuReceipt, LuUpload } from 'react-icons/lu';
+import { LuLayoutDashboard, LuFolderKanban, LuUsers, LuListChecks, LuCalendarDays, LuPencilRuler, LuLayers, LuFileText, LuBadgeCheck, LuTruck, LuShoppingCart, LuWallet, LuCoins, LuUserCog, LuMessagesSquare, LuBell, LuSettings, LuCreditCard, LuLifeBuoy, LuMenu, LuLock, LuPlus, LuCalendarPlus, LuReceipt, LuUpload, LuClock, LuLibrary } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { canSeeFinance, canManageTeam, hasFeature, isOverdue, visibleProjectIds, currentPlan } from '../data/api';
 import { todayISO } from '../data/dates';
@@ -27,10 +27,12 @@ export function useNavModel() {
       { to: '/clients', label: 'לקוחות', icon: LuUsers },
       { to: '/tasks', label: 'משימות', icon: LuListChecks, count: myLate || undefined, hot: myLate > 0 },
       { to: '/calendar', label: 'יומן ופגישות', icon: LuCalendarDays },
+      { to: '/time', label: 'שעות ורווחיות', icon: LuClock },
     ] },
     { title: 'תכנון', items: [
       { to: '/plans', label: 'שרטוטים ותכניות', icon: LuPencilRuler },
       { to: '/specs', label: 'מפרטים', icon: LuLayers },
+      { to: '/library', label: 'ספריית חומרים', icon: LuLibrary },
       { to: '/documents', label: 'מסמכים', icon: LuFileText },
       { to: '/approvals', label: 'אישורי לקוח', icon: LuBadgeCheck, count: pendingAp || undefined, hot: pendingAp > 0 },
     ] },
@@ -128,6 +130,7 @@ function QuickCreate() {
       {me.role !== 'member' ? <MenuItem icon={LuFolderKanban} onClick={() => nav('/projects?new=1')}>פרויקט חדש</MenuItem> : null}
       <MenuItem icon={LuListChecks} onClick={() => nav('/tasks?new=1')}>משימה</MenuItem>
       <MenuItem icon={LuCalendarPlus} onClick={() => nav('/calendar?new=1')}>פגישה</MenuItem>
+      <MenuItem icon={LuClock} onClick={() => nav('/time?log=1')}>רישום שעות</MenuItem>
       <MenuItem icon={LuUpload} onClick={() => nav('/plans?upload=1')}>העלאת שרטוט</MenuItem>
       {hasFeature(db, 'procurement') ? <MenuItem icon={LuShoppingCart} onClick={() => nav('/procurement?new=1')}>הזמנת רכש</MenuItem> : null}
       {fin ? <MenuItem icon={LuReceipt} onClick={() => nav('/expenses?new=1')}>הוצאה</MenuItem> : null}

@@ -1,6 +1,7 @@
 // ArchiFlow demo dataset — one fictional studio and its projects.
 // All names, phone numbers and e-mails are invented (example.co.il / example.com).
-import { D, DT } from './dates';
+import { D, DT, DEMO_TODAY } from './dates';
+import { PHASE_TEMPLATES } from './architect';
 import type * as T from './types';
 
 export const OFFICE_ID = 'off_1';
@@ -661,3 +662,131 @@ export const faqsLive = [
   { q: 'האם ממצאי הבדיקה האוטומטית בשרטוט הם אישור הנדסי?', a: 'לא. הבדיקה האוטומטית היא יכולת עתידית, וגם כשתופעל היא תהיה עזר בלבד ולא תחליף לבדיקה של איש מקצוע מוסמך.' },
   { q: 'למה מייל שנשלח מהמערכת לא הגיע?', a: 'בדקו בתיקיית הספאם. אם עדיין לא הגיע, ייתכן ששירות המייל עוד לא חובר – ביומן המיילים אפשר לראות את מצב השליחה.' },
 ];
+
+// ---------------------------------------------------------------- architect workflow (demo)
+const PROJECT_TEMPLATE: Record<string, [string, number]> = { // template, index of the phase in work (-1: all done)
+  p_cohen: ['interior', 5], p_mizrahi: ['house', 2], p_garin: ['commercial', 6], p_friedman: ['commercial', 2], p_ohayon: ['interior', 2],
+  p_rosen: ['house', 0], p_bendavid: ['interior', -1], p_hanamal: ['commercial', 1], p_stern: ['interior', 4],
+};
+export const projectPhases: T.ProjectPhase[] = Object.entries(PROJECT_TEMPLATE).flatMap(([projectId, [tpl, active]]) =>
+  PHASE_TEMPLATES.find((t) => t.id === tpl)!.phases.map((ph, idx) => ({
+    id: `ph_${projectId}_${idx}`, projectId, idx, name: ph.name, budgetHours: ph.hours,
+    status: (active === -1 || idx < active ? 'done' : idx === active ? 'active' : 'upcoming') as T.PhaseStatus,
+    startedOn: active === -1 || idx <= active ? D(-30 * (Math.max(active, 6) - idx) - 20) : undefined,
+    doneOn: active === -1 || idx < active ? D(-30 * (Math.max(active, 6) - idx) + 5) : undefined,
+  })));
+// each fee milestone is paid at the end of a phase: spread them over the phases in order
+for (const pid of Object.keys(PROJECT_TEMPLATE)) {
+  const fees = feeMilestones.filter((f) => f.projectId === pid); const phs = projectPhases.filter((p) => p.projectId === pid);
+  fees.forEach((f, i) => { f.phaseId = phs[Math.min(phs.length - 1, Math.round((i * (phs.length - 1)) / Math.max(1, fees.length - 1)))].id; });
+}
+
+export const permits: T.Permit[] = [
+  { id: 'pm_mizrahi', projectId: 'p_mizrahi', authority: 'הוועדה המקומית הרצליה', fileNumber: '2026-0417', requestType: 'היתר בנייה – בנייה חדשה', stage: 'review', infoFileOn: '2026-03-02', submittedOn: D(-41), committeeOn: D(19), notes: 'התקבלו הערות בקרת תכן על קווי בניין צדדיים – בטיפול נועה.' },
+  { id: 'pm_rosen', projectId: 'p_rosen', authority: 'הוועדה המקומית כפר סבא', fileNumber: '', requestType: 'היתר בנייה – תוספת', stage: 'info_file', notes: 'לבקש תיק מידע אחרי חתימת הסכם.' },
+  { id: 'pm_hanamal', projectId: 'p_hanamal', authority: 'הוועדה המקומית תל אביב-יפו', fileNumber: '2026-1102', requestType: 'שינוי שימוש', stage: 'committee', infoFileOn: '2026-04-10', submittedOn: '2026-06-22', committeeOn: D(33), notes: 'מבנה לשימור – נדרש אישור מחלקת שימור לפני דיון.' },
+  { id: 'pm_garin', projectId: 'p_garin', authority: 'עיריית תל אביב-יפו – רישוי עסקים', fileNumber: 'RB-55120', requestType: 'רישוי עסק', stage: 'granted', submittedOn: '2026-05-04', grantedOn: D(-9), expiresOn: '2027-12-31', notes: '' },
+];
+export const consultants: T.Consultant[] = [
+  ['p_mizrahi', 'קונסטרוקציה', 'אינג׳ רמי סלע', '052-555-0711', 'rami@sela-eng.example.co.il', 'delivered', ''],
+  ['p_mizrahi', 'קרקע וביסוס', 'גיאו-טק הנדסה', '03-555-0712', 'office@geotech.example.co.il', 'delivered', ''],
+  ['p_mizrahi', 'אינסטלציה', 'מים וזרימה בע״מ', '09-555-0713', 'info@flow.example.co.il', 'engaged', D(12)],
+  ['p_mizrahi', 'חשמל ותאורה', 'אדר הנדסת חשמל', '03-555-0714', 'adar@adar-el.example.co.il', 'engaged', D(12)],
+  ['p_mizrahi', 'מיזוג אוויר', '', '', '', 'needed', D(5)],
+  ['p_mizrahi', 'בטיחות אש', 'בטיחות פלוס', '054-555-0716', 'fire@safety.example.co.il', 'engaged', D(20)],
+  ['p_friedman', 'בטיחות אש', 'בטיחות פלוס', '054-555-0716', 'fire@safety.example.co.il', 'engaged', D(9)],
+  ['p_friedman', 'נגישות', 'מורשית נגישות – ד״ר לי אבני', '050-555-0717', 'lee@access.example.co.il', 'needed', D(4)],
+  ['p_friedman', 'מיזוג אוויר', 'קור-טק', '03-555-0718', 'design@cortech.example.co.il', 'engaged', D(14)],
+  ['p_friedman', 'אקוסטיקה', '', '', '', 'needed', D(21)],
+  ['p_hanamal', 'שימור', 'יועצת שימור – אדר׳ מרים טל', '052-555-0719', 'miriam@heritage.example.co.il', 'engaged', D(26)],
+  ['p_hanamal', 'קונסטרוקציה', 'אינג׳ רמי סלע', '052-555-0711', 'rami@sela-eng.example.co.il', 'engaged', D(40)],
+  ['p_cohen', 'חשמל ותאורה', 'אדר הנדסת חשמל', '03-555-0714', 'adar@adar-el.example.co.il', 'delivered', ''],
+  ['p_cohen', 'קונסטרוקציה', 'אינג׳ רמי סלע', '052-555-0711', 'rami@sela-eng.example.co.il', 'delivered', ''],
+].map(([projectId, discipline, name, phone, email, status, dueOn], i) => ({ id: 'cs' + i, projectId, discipline, name, phone, email, status: status as T.ConsultantStatus, dueOn: dueOn || undefined, notes: '' }));
+
+export const memberRates: T.MemberRate[] = [['u_michal', 220], ['u_yoav', 200], ['u_noa', 150], ['u_ori', 140], ['u_shira', 110], ['u_daniel', 130]].map(([userId, hourlyCost]) => ({ id: userId as string, userId: userId as string, hourlyCost: hourlyCost as number }));
+// six weeks of logged hours, deterministic so the demo looks the same every time
+let seedN = 7; const rnd = () => ((seedN = (seedN * 9301 + 49297) % 233280) / 233280);
+const NOTES = ['תכניות עבודה', 'פגישה עם הלקוח', 'תיאום יועצים', 'עדכון מפרט', 'סיור באתר', 'הכנת הדמיות', 'תכנית חשמל', 'פרטי נגרות', 'הכנת הגשה', 'בדיקת הצעות מחיר'];
+export const timeEntries: T.TimeEntry[] = [];
+const staffOf = (pid: string) => assignments.filter((a) => a.projectId === pid).map((a) => a.userId);
+// finished phases: between 80% and 115% of the planned hours, spread over the phase's dates
+for (const ph of projectPhases.filter((x) => x.status === 'done' && x.budgetHours)) {
+  const target = ph.budgetHours! * (0.8 + rnd() * 0.35); const who = staffOf(ph.projectId); let h = 0, k = 0;
+  while (h < target && who.length) {
+    const hours = [2, 3, 4, 5][Math.floor(rnd() * 4)];
+    timeEntries.push({ id: `te${timeEntries.length}`, projectId: ph.projectId, userId: who[k++ % who.length], date: ph.doneOn ? D(Math.min(-1, Math.round((Date.parse(ph.doneOn) - DEMO_TODAY.getTime()) / 86400000) - Math.floor(rnd() * 20))) : D(-60), hours, phaseIdx: ph.idx, note: NOTES[Math.floor(rnd() * NOTES.length)] });
+    h += hours;
+  }
+}
+// the phase in work: the last six weeks, day by day
+for (let day = -42; day <= 0; day++) {
+  const dow = new Date(DEMO_TODAY.getTime() + day * 86400000).getDay(); if (dow === 5 || dow === 6) continue;
+  for (const a of assignments) {
+    const ph = projectPhases.find((p) => p.projectId === a.projectId && p.status === 'active'); if (!ph || rnd() > 0.11) continue;
+    timeEntries.push({ id: `te${timeEntries.length}`, projectId: a.projectId, userId: a.userId, date: D(day), hours: [1, 1.5, 2, 2.5, 3][Math.floor(rnd() * 5)], phaseIdx: ph.idx, note: NOTES[Math.floor(rnd() * NOTES.length)] });
+  }
+}
+
+export const siteVisits: T.SiteVisit[] = [
+  { id: 'sv_c1', projectId: 'p_cohen', date: D(-12), attendees: 'יואב ברק, דניאל אברהם, משה (בינה בנייה)', summary: 'סיום שלד ותשתיות. איטום מרפסת הגג בוצע ונבדק בהצפה של 48 שעות – ללא נזילות. הקבלן ערוך להתחלת ריצוף בשבוע הבא.', status: 'sent', sentAt: D(-11) + 'T09:12', createdBy: 'u_yoav' },
+  { id: 'sv_c2', projectId: 'p_cohen', date: D(-1), attendees: 'יואב ברק, דניאל אברהם', summary: 'ריצוף בסלון ובמטבח בעבודה. נמצאו הפרשי גובה מול מסילת הדלת למרפסת. נגרות המטבח תגיע לאתר בעוד שלושה שבועות.', status: 'draft', createdBy: 'u_yoav' },
+  { id: 'sv_g1', projectId: 'p_garin', date: D(-6), attendees: 'אורי דהן, דניאל אברהם, עומר נחום', summary: 'סיור טרום מסירה. רוב העבודות הושלמו; נותרו תיקוני גמר בבר ובתאורה.', status: 'sent', sentAt: D(-6) + 'T16:40', createdBy: 'u_ori' },
+];
+export const siteFindings: T.SiteFinding[] = [
+  { id: 'sf1', projectId: 'p_cohen', visitId: 'sv_c1', title: 'חסר שרוול מעבר צנרת מיזוג בקיר מסדרון', location: 'מסדרון חדרים', responsible: 'בינה בנייה', dueOn: D(-4), severity: 'medium', status: 'verified' },
+  { id: 'sf2', projectId: 'p_cohen', visitId: 'sv_c1', title: 'נקודת חשמל למדיח במיקום לא תואם לתכנית E-201', location: 'מטבח', responsible: 'אדר הנדסת חשמל', dueOn: D(-2), severity: 'high', status: 'fixed' },
+  { id: 'sf3', projectId: 'p_cohen', visitId: 'sv_c2', title: 'הפרש גובה 8 מ״מ בין ריצוף הסלון למסילת דלת המרפסת', location: 'סלון / יציאה למרפסת', responsible: 'בינה בנייה', dueOn: D(4), severity: 'high', status: 'open' },
+  { id: 'sf4', projectId: 'p_cohen', visitId: 'sv_c2', title: 'פוגות לא אחידות בחיפוי קיר המקלחת', location: 'חדר רחצה הורים', responsible: 'בינה בנייה', dueOn: D(6), severity: 'medium', status: 'open' },
+  { id: 'sf5', projectId: 'p_cohen', visitId: 'sv_c2', title: 'לוודא הכנה לגוף תאורה שקוע מעל האי', location: 'מטבח', responsible: 'אדר הנדסת חשמל', dueOn: D(8), severity: 'low', status: 'open' },
+  { id: 'sf6', projectId: 'p_garin', visitId: 'sv_g1', title: 'שריטה בציפוי פורמייקה בחזית הבר', location: 'בר', responsible: 'נגרות אומן שלום', dueOn: D(3), severity: 'medium', status: 'open' },
+  { id: 'sf7', projectId: 'p_garin', visitId: 'sv_g1', title: 'שני גופי תאורה לא דולקים במעגל הישיבה', location: 'אזור ישיבה', responsible: 'תאורה בהירה', dueOn: D(1), severity: 'low', status: 'fixed' },
+];
+
+export const clientBriefs: T.ClientBrief[] = [
+  { id: 'cb_cohen', projectId: 'p_cohen', status: 'submitted', sentAt: '2025-11-12', submittedAt: '2025-11-19', answers: {
+    household: 'דנה ואבי, שני ילדים (9 ו-13) וכלבה גדולה.', routine: 'אבי עובד מהבית שלושה ימים. מבשלים הרבה, בעיקר בערב. בשישי ארוחה משפחתית.', hosting: '6–12',
+    spaces: ['מטבח גדול', 'פינת אוכל', 'חדר עבודה', 'מרפסת'], storage: 'הרבה – ציוד ספורט, ספרים ומטבח מלא.', keep: 'שולחן האוכל מעץ אלון ופסנתר.',
+    accessibility: '', style: ['מינימליסטי', 'ים תיכוני'], feel: 'מואר, רגוע וחם. מקום שנוח לחזור אליו.', colors: 'אוהבים עץ טבעי, אבן ולבן חם. לא רוצים שחור מבריק.',
+    budget: '600 אלף עד מיליון ₪', deadline: 'לפני ספטמבר 2027 – תחילת שנת הלימודים.', priorities: 'אפשר לוותר על חדר האורחים, לא על המטבח.' } },
+  { id: 'cb_stern', projectId: 'p_stern', status: 'sent', sentAt: D(-3), answers: { household: 'נורית ויוסי, שלושה ילדים.' } },
+];
+
+// little material swatches drawn in code (no photos in the demo)
+function texture(kind: 'terrazzo' | 'wood' | 'marble' | 'tile' | 'fabric' | 'brass' | 'concrete' | 'plant', a: string, b: string) {
+  const parts: Record<string, string> = {
+    terrazzo: `<rect width="120" height="120" fill="${a}"/>${Array.from({ length: 26 }, (_, i) => `<circle cx="${(i * 37) % 120}" cy="${(i * 53) % 120}" r="${2 + (i % 4)}" fill="${i % 2 ? b : '#ffffff'}" opacity=".8"/>`).join('')}`,
+    wood: `<rect width="120" height="120" fill="${a}"/>${Array.from({ length: 9 }, (_, i) => `<path d="M0 ${i * 14 + 4} C40 ${i * 14 - 2} 80 ${i * 14 + 10} 120 ${i * 14 + 4}" stroke="${b}" stroke-width="2" fill="none" opacity=".55"/>`).join('')}`,
+    marble: `<rect width="120" height="120" fill="${a}"/><path d="M-10 30 C30 50 50 10 130 40 M-10 80 C40 70 70 110 130 90 M20 -10 C40 40 30 80 60 130" stroke="${b}" stroke-width="1.6" fill="none" opacity=".7"/>`,
+    tile: `<rect width="120" height="120" fill="${b}"/>${[0, 1, 2, 3].flatMap((x) => [0, 1, 2, 3].map((y) => `<rect x="${x * 30 + 1.5}" y="${y * 30 + 1.5}" width="27" height="27" fill="${a}"/>`)).join('')}`,
+    fabric: `<rect width="120" height="120" fill="${a}"/>${Array.from({ length: 30 }, (_, i) => `<path d="M0 ${i * 4} H120" stroke="${b}" stroke-width=".8" opacity=".4"/>`).join('')}`,
+    brass: `<defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".5" stop-color="${b}"/><stop offset="1" stop-color="${a}"/></linearGradient></defs><rect width="120" height="120" fill="url(#g)"/>`,
+    concrete: `<rect width="120" height="120" fill="${a}"/>${Array.from({ length: 40 }, (_, i) => `<circle cx="${(i * 29) % 120}" cy="${(i * 71) % 120}" r="1" fill="${b}" opacity=".6"/>`).join('')}`,
+    plant: `<rect width="120" height="120" fill="${a}"/><path d="M60 120 C60 80 30 60 20 30 M60 120 C60 70 90 55 100 20 M60 120 C62 80 60 50 62 15" stroke="${b}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  };
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid slice">${parts[kind]}</svg>`);
+}
+export const moodItems: T.MoodItem[] = [
+  { id: 'mi1', projectId: 'p_cohen', kind: 'image', title: 'טראצו בהיר לחדר הרחצה', note: 'אגרגט קטן, גוונים חמים', image: texture('terrazzo', '#EDE6DC', '#C9A98B'), shared: true, reaction: 'love', clientComment: 'בדיוק מה שרצינו!', sort: 0 },
+  { id: 'mi2', projectId: 'p_cohen', kind: 'image', title: 'אלון טבעי לנגרות', note: 'גימור שמן מט', image: texture('wood', '#C9A27A', '#8C6A4A'), shared: true, reaction: 'love', clientComment: '', sort: 1 },
+  { id: 'mi3', projectId: 'p_cohen', kind: 'color', title: 'חול חם', note: 'קירות הסלון', color: '#E8DCCB', shared: true, reaction: 'maybe', clientComment: 'אפשר לראות דוגמה על הקיר?', sort: 2 },
+  { id: 'mi4', projectId: 'p_cohen', kind: 'image', title: 'פליז מוברש לפרזול', note: 'ידיות וברזים', image: texture('brass', '#B08A4E', '#E3C88E'), shared: true, clientComment: '', sort: 3 },
+  { id: 'mi5', projectId: 'p_cohen', kind: 'image', title: 'שיש קלקטה למשטח', note: 'חלופה יקרה – לשקול', image: texture('marble', '#F4F1EC', '#9D958B'), shared: true, reaction: 'no', clientComment: 'יפה אבל יקר מדי בשבילנו', sort: 4 },
+  { id: 'mi6', projectId: 'p_cohen', kind: 'note', title: 'רעיון פנימי', note: 'לבדוק עם הנגר נישה מוארת מעל המיטה – לפני שמראים ללקוחה.', shared: false, clientComment: '', sort: 5 },
+  { id: 'mi7', projectId: 'p_stern', kind: 'image', title: 'אריח זליג׳ ירוק', note: 'קיר מטבח', image: texture('tile', '#5F8A7A', '#F2EEE6'), shared: true, clientComment: '', sort: 0 },
+  { id: 'mi8', projectId: 'p_stern', kind: 'image', title: 'בטון מוחלק לריצוף', note: '', image: texture('concrete', '#BDB7AE', '#8E877D'), shared: true, clientComment: '', sort: 1 },
+  { id: 'mi9', projectId: 'p_stern', kind: 'color', title: 'ירוק זית', note: 'ארונות מטבח', color: '#6E7552', shared: true, clientComment: '', sort: 2 },
+];
+
+export const libraryItems: T.LibraryItem[] = [
+  ['אריח טראצו 60×60 חול', 'ריצוף וחיפוי', 'sup_hadar', 'TZ-6060-SND', 'מ״ר', 289, texture('terrazzo', '#EDE6DC', '#C9A98B'), ['פופולרי', 'רחצה']],
+  ['זליג׳ מרוקאי 10×10 ירוק', 'ריצוף וחיפוי', 'sup_hadar', 'ZL-10-GRN', 'מ״ר', 420, texture('tile', '#5F8A7A', '#F2EEE6'), ['מטבח']],
+  ['פרקט אלון אירופאי 19 מ״מ', 'עץ ופרקט', 'sup_shalom', 'OAK-19-NAT', 'מ״ר', 365, texture('wood', '#C9A27A', '#8C6A4A'), ['חדרי שינה']],
+  ['קוורץ קלקטה גולד 2 ס״מ', 'שיש ומשטחים', 'sup_galed', 'QZ-CAL-20', 'מ״א', 1850, texture('marble', '#F4F1EC', '#9D958B'), ['מטבח', 'יוקרה']],
+  ['ברז פרח למטבח פליז מוברש', 'ברזים', 'sup_sanit', 'KF-BR-21', 'יח׳', 1640, texture('brass', '#B08A4E', '#E3C88E'), ['פליז']],
+  ['כיור אינטגרלי בטון 90', 'כלים סניטריים', 'sup_sanit', 'BS-90-CN', 'יח׳', 2350, texture('concrete', '#BDB7AE', '#8E877D'), ['רחצה']],
+  ['ספוט שקוע 7W ‏2700K', 'תאורה', 'sup_light', 'LD-7-27', 'יח׳', 145, texture('brass', '#2E2A28', '#6B625C'), ['תאורה חמה']],
+  ['וילון פשתן טבעי', 'טקסטיל', 'sup_textile', 'LN-NAT', 'מ״א', 210, texture('fabric', '#E7DFD2', '#A49580'), []],
+  ['ספה מודולרית בד בוקלה', 'ריהוט', 'sup_nordic', 'SF-BOU-3', 'יח׳', 12900, texture('fabric', '#EFEAE2', '#C8BFB2'), ['סלון']],
+  ['טיח מינרלי מוחלק', 'צבע וטיח', 'sup_bina', 'TM-LIME', 'מ״ר', 180, texture('concrete', '#E4DED5', '#B9B0A3'), ['קירות']],
+].map(([name, category, supplierId, sku, unit, price, image, tags], i) => ({ id: 'lib' + i, name: name as string, category: category as string, supplierId: supplierId as string, sku: sku as string, unit: unit as string, price: price as number, image: image as string, url: '', notes: '', tags: tags as string[] }));

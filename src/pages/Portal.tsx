@@ -14,6 +14,12 @@ import { ChatThread, NotificationList } from './Comms';
 import { parseRoute } from '../lib/route';
 import { date, relDay, ils, ago, monthName } from '../lib/format';
 import { DEMO_TODAY } from '../data/dates';
+import { PortalBrief, PortalInspiration } from './Brief';
+import { SiteReport } from './Site';
+import { PermitStepper } from './Permit';
+import { phasesOf } from '../data/api';
+import { permitLabel } from '../data/architect';
+import { LuClipboardList, LuHardHat, LuLandmark, LuPalette } from 'react-icons/lu';
 
 const latestV = (p: T.Plan) => p.versions[p.versions.length - 1];
 
@@ -37,6 +43,9 @@ export function PortalRouter() {
       {page === 'notifications' ? <h1 className="sr-only">התראות</h1> : null}
       {page === 'messages' ? <Card title={`שיחה עם ${db.office.name}`}><ChatThread projectId={project.id} viewerSide="client" /></Card> : null}
       {page === 'history' ? <History project={project} /> : null}
+      {page === 'brief' ? <PortalBrief key={project.id} project={project} /> : null}
+      {page === 'inspiration' ? <PortalInspiration project={project} /> : null}
+      {page === 'site' ? <SiteReports project={project} /> : null}
       {page === 'notifications' ? <Card title="התראות" pad={false}><NotificationList items={db.notifications.filter((n) => n.userId === me.id)} onGo={nav} /></Card> : null}
     </div>
   );
@@ -62,6 +71,11 @@ function Home({ project }: { project: T.Project }) {
     ...v.meetings.filter((m) => m.projectId === project.id && m.summary).map((m) => ({ at: m.date, text: `סיכום פגישה: ${m.title}`, to: '/portal/meetings', icon: LuCalendarDays })),
   ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5);
   const liveFin = useClientBudget(project.id);
+  const phs = phasesOf(db, project.id);
+  const permit = db.permits.find((x) => x.projectId === project.id);
+  const brief = db.clientBriefs.find((x) => x.projectId === project.id && x.status === 'sent');
+  const report = db.siteVisits.filter((x) => x.projectId === project.id && x.status === 'sent').sort((a, b) => b.date.localeCompare(a.date))[0];
+  const newMood = db.moodItems.filter((m) => m.projectId === project.id && m.shared && !m.reaction).length;
   const fin = IS_LIVE ? liveFin : db.settings.clientSeesBudgetSummary ? projectFinance(db, project.id) : null;
   return (
     <>
@@ -70,13 +84,15 @@ function Home({ project }: { project: T.Project }) {
           <div className="grow" style={{ minWidth: 240 }}>
             <div className="small" style={{ color: 'var(--on-navy-2)' }}>שלום {me.name.split(' ')[0]}, זה הפרויקט שלך</div>
             <h1 className="display" style={{ fontSize: 'var(--fs-3xl)', margin: '6px 0' }}>{project.name}</h1>
-            <div className="small" style={{ color: 'var(--on-navy-2)' }}>{project.address}, {project.city} · שלב נוכחי: <b style={{ color: 'var(--accent-bright)' }}>{PHASES[project.phase]}</b></div>
-            <div className="phases mt16" style={{ maxWidth: 560 }}>{PHASES.map((ph, i) => <div key={ph} className={cx('phase', i < project.phase && 'done', i === project.phase && 'now')}><div className="bar" style={{ background: i < project.phase ? 'var(--ok)' : i === project.phase ? 'var(--accent)' : 'rgba(255,255,255,.15)' }} /><div className="ph-label" style={{ color: i === project.phase ? 'var(--accent-bright)' : 'var(--on-navy-2)' }}>{ph}</div></div>)}</div>
+            <div className="small" style={{ color: 'var(--on-navy-2)' }}>{project.address}, {project.city} · שלב נוכחי: <b style={{ color: 'var(--accent-bright)' }}>{phs.length ? (phs.find((x) => x.status === 'active')?.name || (phs.every((x) => x.status === 'done') ? 'כל השלבים הושלמו' : phs[0].name)) : PHASES[project.phase]}</b></div>
+            {phs.length ? <div className="phases mt16 on-dark" style={{ maxWidth: 640 }}>{phs.map((ph) => <div key={ph.id} className={cx('phase', ph.status === 'done' && 'done', ph.status === 'active' && 'now')}><div className="bar" /><div className="ph-label">{ph.name}</div></div>)}</div>
+            : <div className="phases mt16" style={{ maxWidth: 560 }}>{PHASES.map((ph, i) => <div key={ph} className={cx('phase', i < project.phase && 'done', i === project.phase && 'now')}><div className="bar" style={{ background: i < project.phase ? 'var(--ok)' : i === project.phase ? 'var(--accent)' : 'rgba(255,255,255,.15)' }} /><div className="ph-label" style={{ color: i === project.phase ? 'var(--accent-bright)' : 'var(--on-navy-2)' }}>{ph}</div></div>)}</div>}
           </div>
           <div className="col t-center" style={{ alignItems: 'center' }}><Ring value={project.progress / 100} size={104} stroke={9} color="var(--accent)" /><span className="xs" style={{ color: 'var(--on-navy-2)' }}>התקדמות כללית</span></div>
         </div>
       </section>
       <HiddenNote project={project} />
+      {brief ? <button type="button" className="demo-cta" onClick={() => nav('/portal/brief')} style={{ font: 'inherit', textAlign: 'right', width: '100%' }}><span className="demo-cta-ic"><LuClipboardList aria-hidden /></span><span className="grow"><b>שאלון פתיחה מחכה לך</b><span className="small">כמה שאלות שיעזרו לנו להכיר אתכם. אפשר לשמור ולהמשיך אחר כך.</span></span><LuArrowLeft aria-hidden /></button> : null}
       <div className="grid-main-side">
         <div className="stack-lg" style={{ minWidth: 0 }}>
           <Card title={`ממתין להחלטה שלך (${pending.length})`} actions={pending.length ? <Btn size="sm" kind="primary" onClick={() => nav('/portal/approvals')}>לכל האישורים<LuArrowLeft aria-hidden /></Btn> : null}>
@@ -88,6 +104,9 @@ function Home({ project }: { project: T.Project }) {
         </div>
         <div className="stack-lg" style={{ minWidth: 0 }}>
           {next ? <Card title="אבן הדרך הבאה"><div className="lg bold">{next.title}</div><div className="small muted">{date(next.date)}{daysFromToday(next.date) >= 0 && daysFromToday(next.date) < 7 ? ' · ' + relDay(next.date) : ''}</div><div className="xs muted mt8">מסירה משוערת: {date(project.dueDate)}</div></Card> : null}
+          {permit ? <Card title="היתר בנייה" icon={LuLandmark} actions={<Badge tone={permit.stage === 'granted' ? 'ok' : permit.stage === 'rejected' ? 'bad' : 'info'}>{permitLabel(permit.stage)}</Badge>}><div className="stack small"><PermitStepper stage={permit.stage} compact />{permit.committeeOn && permit.stage !== 'granted' ? <span>דיון בוועדה: <b>{date(permit.committeeOn)}</b></span> : null}<span className="xs muted">{permit.authority}</span></div></Card> : null}
+          {report ? <Card title="דו״ח פיקוח אחרון" icon={LuHardHat}><div className="stack small"><b>{date(report.date)}</b><span className="muted" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{report.summary}</span><div><Btn size="sm" onClick={() => nav('/portal/site')}>לדו״ח המלא</Btn></div></div></Card> : null}
+          {newMood ? <Card title="לוח השראה" icon={LuPalette}><div className="stack small"><span>{newMood === 1 ? 'פריט חדש אחד מחכה' : `${newMood} פריטים חדשים מחכים`} לתגובה שלך.</span><div><Btn size="sm" onClick={() => nav('/portal/inspiration')}>לצפייה ולתגובה</Btn></div></div></Card> : null}
           <Card title="הפגישה הבאה" icon={LuCalendarDays}>{meet ? <div className="stack small"><b className="lg">{meet.title}</b><span className="row g4"><LuClock aria-hidden style={{ width: 14 }} />{relDay(meet.date)} · <span className="ltr">{meet.start}–{meet.end}</span></span><span className="row g4"><LuMapPin aria-hidden style={{ width: 14 }} />{meet.location}</span></div> : <span className="small muted">אין פגישה מתוכננת.</span>}</Card>
           {fin ? (
             <Card title="סיכום תקציב ביצוע" icon={LuWallet} actions={IS_LIVE ? undefined : <span className="tag-demo">מדומה</span>}>
@@ -264,4 +283,18 @@ function useClientBudget(projectId: string) {
     return () => { alive = false; };
   }, [projectId]); // eslint-disable-line
   return fin;
+}
+
+function SiteReports({ project }: { project: T.Project }) {
+  const { db } = useStore();
+  const vs = db.siteVisits.filter((v) => v.projectId === project.id && v.status === 'sent').sort((a, b) => b.date.localeCompare(a.date));
+  const [sel, setSel] = useState(vs[0]?.id);
+  const cur = vs.find((v) => v.id === sel);
+  return (
+    <>
+      <div><h1 className="display" style={{ fontSize: 'var(--fs-2xl)' }}>דו״חות פיקוח</h1><p className="soft">מה נבדק באתר, מה צריך לתקן ומי אחראי.</p></div>
+      {vs.length > 1 ? <div className="chips">{vs.map((v) => <button key={v.id} type="button" className={cx('chip', v.id === sel && 'on')} aria-pressed={v.id === sel} onClick={() => setSel(v.id)}>{date(v.date)}</button>)}</div> : null}
+      {cur ? <div className="card pad"><SiteReport v={cur} /></div> : <div className="card"><Empty title="אין דו״חות עדיין" /></div>}
+    </>
+  );
 }

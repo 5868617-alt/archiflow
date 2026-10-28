@@ -13,7 +13,7 @@ const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigat
 export const MOD = isMac ? '⌘' : 'Ctrl';
 const typing = (t: EventTarget | null) => { const el = t as HTMLElement | null; return !!el && (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.isContentEditable); };
 
-const GO_KEYS: Record<string, string> = { d: '/dashboard', p: '/projects', t: '/tasks', c: '/calendar', l: '/clients', s: '/plans', a: '/approvals', b: '/budget' };
+const GO_KEYS: Record<string, string> = { d: '/dashboard', p: '/projects', t: '/tasks', c: '/calendar', l: '/clients', s: '/plans', a: '/approvals', b: '/budget', h: '/time' };
 
 export function useCommandPalette() {
   const { nav } = useStore();
@@ -63,6 +63,7 @@ export function CommandPalette({ onClose, onHelp }: { onClose: () => void; onHel
     ...(me.role !== 'member' ? [{ id: 'a-proj', label: 'פרויקט חדש', icon: LuFolderKanban, to: '/projects?new=1', group: 'פעולות' }] : []),
     { id: 'a-task', label: 'משימה חדשה', icon: LuPlus, to: '/tasks?new=1', group: 'פעולות' },
     { id: 'a-meet', label: 'קביעת פגישה', icon: LuCalendarPlus, to: '/calendar?new=1', group: 'פעולות' },
+    { id: 'a-time', label: 'רישום שעות', icon: LuClock, to: '/time?log=1', group: 'פעולות' },
     { id: 'a-plan', label: 'העלאת שרטוט', icon: LuUpload, to: '/plans?upload=1', group: 'פעולות' },
     { id: 'a-appr', label: 'שליחה לאישור לקוח', icon: LuSend, to: '/approvals?new=1', group: 'פעולות' },
     ...(hasFeature(db, 'procurement') ? [{ id: 'a-po', label: 'הזמנת רכש חדשה', icon: LuShoppingCart, to: '/procurement?new=1', group: 'פעולות' }] : []),

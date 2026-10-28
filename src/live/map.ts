@@ -178,7 +178,7 @@ export function fromSnapshot(s: any, c: Ctx0) {
   const budgetLines: T.BudgetLine[] = g('budget_lines').map((b) => ({ id: b.id, projectId: b.project_id, category: b.category, planned: Number(b.planned) || 0 }));
   const expenses: T.Expense[] = g('expenses').map((e) => ({ id: e.id, projectId: e.project_id, date: e.expense_date, category: e.category, description: e.description, supplierId: e.supplier_id, poId: e.po_id, amount: Number(e.amount) || 0,
     receipt: e.receipt_path ? e.receipt_path.split('/').pop() : null, _receiptPath: e.receipt_path, status: E.expense.ui(e.status) as any, paidBy: E.payer.ui(e.paid_by) as any } as any)).sort((a, b) => b.date.localeCompare(a.date));
-  const feeMilestones: T.FeeMilestone[] = g('fee_milestones').map((f) => ({ id: f.id, projectId: f.project_id, title: f.title, pct: Number(f.pct) || 0, amount: Number(f.amount) || 0, dueDate: f.due_date || '', status: E.fee.ui(f.status) as any, paidAt: f.paid_at || undefined }))
+  const feeMilestones: T.FeeMilestone[] = g('fee_milestones').map((f) => ({ id: f.id, projectId: f.project_id, title: f.title, pct: Number(f.pct) || 0, amount: Number(f.amount) || 0, dueDate: f.due_date || '', status: E.fee.ui(f.status) as any, paidAt: f.paid_at || undefined, phaseId: f.phase_id || undefined }))
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const notifications: T.Notification[] = g('notifications').map((n) => ({ id: n.id, userId: n.user_id, kind: n.kind, title: n.title, body: n.body || '', link: n.link || '', at: stamp(n.created_at), read: !!n.read_at }));
   const nameOf = (id: string) => (profiles.get(id) as any)?.full_name || 'משתמש';
@@ -216,12 +216,26 @@ export function fromSnapshot(s: any, c: Ctx0) {
 
   const office: T.Office = { id: office0.id || '', name: office0.name || '', legalName: office0.legal_name || '', city: office0.city || '', address: office0.address || '', phone: office0.phone || '', email: office0.email || '', vatId: office0.vat_id || '', createdAt: day(office0.created_at), logoText: office0.logo_text || (office0.name || 'AF').slice(0, 2), specialties: office0.specialties || [] };
 
+  const projectPhases: T.ProjectPhase[] = g('project_phases').map((x) => ({ id: x.id, projectId: x.project_id, idx: x.idx, name: x.name, status: x.status, budgetHours: x.budget_hours == null ? null : Number(x.budget_hours), startedOn: x.started_on || undefined, doneOn: x.done_on || undefined }));
+  const permits: T.Permit[] = g('permits').map((x) => ({ id: x.id, projectId: x.project_id, authority: x.authority || '', fileNumber: x.file_number || '', requestType: x.request_type || '', stage: x.stage, infoFileOn: x.info_file_on || undefined, submittedOn: x.submitted_on || undefined, committeeOn: x.committee_on || undefined, grantedOn: x.granted_on || undefined, expiresOn: x.expires_on || undefined, notes: x.notes || '' }));
+  const consultants: T.Consultant[] = g('project_consultants').map((x) => ({ id: x.id, projectId: x.project_id, discipline: x.discipline, name: x.name || '', phone: x.phone || '', email: x.email || '', status: x.status, dueOn: x.due_on || undefined, notes: x.notes || '' }));
+  const timeEntries: T.TimeEntry[] = g('time_entries').map((x) => ({ id: x.id, projectId: x.project_id, userId: x.user_id, date: x.entry_date, hours: Number(x.hours) || 0, phaseIdx: x.phase_idx ?? null, note: x.note || '' })).sort((a, b) => b.date.localeCompare(a.date));
+  const memberRates: T.MemberRate[] = g('member_rates').map((x) => ({ id: x.user_id, userId: x.user_id, hourlyCost: Number(x.hourly_cost) || 0 }));
+  const siteVisits: T.SiteVisit[] = g('site_visits').map((x) => ({ id: x.id, projectId: x.project_id, date: x.visit_date, attendees: x.attendees || '', summary: x.summary || '', status: x.status, sentAt: x.sent_at ? stamp(x.sent_at) : undefined, createdBy: x.created_by || '' })).sort((a, b) => b.date.localeCompare(a.date));
+  const siteFindings: T.SiteFinding[] = g('site_findings').map((x) => ({ id: x.id, projectId: x.project_id, visitId: x.visit_id, title: x.title, location: x.location || '', responsible: x.responsible || '', dueOn: x.due_on || undefined, severity: x.severity, status: x.status, photo: x.photo_path || undefined, _created: x.created_at } as any)).sort((a: any, b: any) => (a._created || '').localeCompare(b._created || ''));
+  const clientBriefs: T.ClientBrief[] = g('client_briefs').map((x) => ({ id: x.id, projectId: x.project_id, status: x.status, answers: x.answers || {}, sentAt: x.sent_at ? day(x.sent_at) : undefined, submittedAt: x.submitted_at ? day(x.submitted_at) : undefined }));
+  const moodItems: T.MoodItem[] = g('mood_items').map((x) => ({ id: x.id, projectId: x.project_id, kind: x.kind, title: x.title || '', note: x.note || '', color: x.color || undefined, image: x.image_path || undefined, shared: !!x.shared, reaction: x.reaction || undefined, clientComment: x.client_comment || '', sort: x.sort || 0 })).sort((a, b) => a.sort - b.sort);
+  const libraryItems: T.LibraryItem[] = g('library_items').map((x) => ({ id: x.id, name: x.name, category: x.category || '', supplierId: x.supplier_id || '', sku: x.sku || '', unit: x.unit || '', price: x.price == null ? null : Number(x.price), image: x.image_path || undefined, url: x.url || '', notes: x.notes || '', tags: x.tags || [] }));
+  const br = s.branding || {};
+  const branding: T.Branding = { color: br.brand_color || settingsRow.brand_color || undefined, logo: br.logo_path || settingsRow.logo_path || undefined };
+
   return {
     office, users, memberships: members.map((m: any) => ({ id: m.office_id + ':' + m.user_id, officeId: m.office_id, userId: m.user_id, role: m.role, since: day(m.joined_at) })), invitations, clients, projects,
     assignments: g('project_assignments').map((a) => ({ id: a.project_id + ':' + a.user_id, projectId: a.project_id, userId: a.user_id, roleInProject: a.role_in_project || '' })),
     tasks, templates, plans, annotations, specItems, specVersions, approvals, documents, meetings, absences, suppliers, purchaseOrders, budgetLines, expenses, feeMilestones,
     notifications, messages, emailLog, activity, subscriptionPlans, officeSubscription, invoices, pricingChanges, platformOffices: [] as T.PlatformOffice[], tickets, auditLog, systemEvents, announcements,
     retentionPolicies, helpArticles: seed.helpArticlesLive, faqs: seed.faqsLive,
+    projectPhases, permits, consultants, timeEntries, memberRates, siteVisits, siteFindings, clientBriefs, moodItems, libraryItems, branding,
     settings: {
       memberCanSeeFinance: !!settingsRow.member_can_see_finance, memberSeesAllProjects: !!settingsRow.member_sees_all_projects, clientSeesBudgetSummary: !!settingsRow.client_sees_budget_summary, adminCanManageBilling: !!settingsRow.admin_can_manage_billing,
       notif: { approvals: pref('approval'), tasks: pref('task'), meetings: pref('meeting'), budget: pref('budget'), comments: pref('comment'), digest: pref('digest') },
@@ -266,7 +280,15 @@ export const toRow = {
   poItem: (i: T.POItem, poId: string) => ({ id: i.id, po_id: poId, spec_item_id: i.specItemId && /^[0-9a-f-]{36}$/.test(i.specItemId) ? i.specItemId : null, name: i.name, qty: i.qty || 0, unit: i.unit, unit_price: i.unitPrice || 0, received_qty: i.received || 0 }),
   budgetLine: (b: T.BudgetLine) => ({ id: b.id, project_id: b.projectId, category: b.category, planned: b.planned || 0 }),
   expense: (e: any) => ({ id: e.id, project_id: e.projectId, expense_date: e.date, category: e.category, description: e.description, supplier_id: n0(e.supplierId), po_id: n0(e.poId), amount: e.amount || 0, status: E.expense.db(e.status), paid_by: E.payer.db(e.paidBy), ...(e._receiptPath !== undefined ? { receipt_path: e._receiptPath } : {}) }),
-  fee: (f: T.FeeMilestone) => ({ id: f.id, project_id: f.projectId, title: f.title, pct: f.pct || null, amount: f.amount || 0, due_date: n0(f.dueDate), status: E.fee.db(f.status), paid_at: f.paidAt || null }),
+  fee: (f: T.FeeMilestone) => ({ id: f.id, project_id: f.projectId, title: f.title, pct: f.pct || null, amount: f.amount || 0, due_date: n0(f.dueDate), status: E.fee.db(f.status), paid_at: f.paidAt || null, phase_id: f.phaseId || null }),
+  phase: (x: T.ProjectPhase) => ({ id: x.id, project_id: x.projectId, idx: x.idx, name: x.name, status: x.status, budget_hours: x.budgetHours ?? null, started_on: n0(x.startedOn), done_on: n0(x.doneOn) }),
+  permit: (x: T.Permit) => ({ id: x.id, project_id: x.projectId, authority: x.authority, file_number: x.fileNumber, request_type: x.requestType, stage: x.stage, info_file_on: n0(x.infoFileOn), submitted_on: n0(x.submittedOn), committee_on: n0(x.committeeOn), granted_on: n0(x.grantedOn), expires_on: n0(x.expiresOn), notes: x.notes }),
+  consultant: (x: T.Consultant) => ({ id: x.id, project_id: x.projectId, discipline: x.discipline, name: x.name, phone: x.phone, email: x.email, status: x.status, due_on: n0(x.dueOn), notes: x.notes }),
+  timeEntry: (x: T.TimeEntry) => ({ id: x.id, project_id: x.projectId, user_id: x.userId, entry_date: x.date, hours: x.hours, phase_idx: x.phaseIdx ?? null, note: x.note }),
+  visit: (x: T.SiteVisit) => ({ id: x.id, project_id: x.projectId, visit_date: x.date, attendees: x.attendees, summary: x.summary }),
+  finding: (x: T.SiteFinding) => ({ id: x.id, project_id: x.projectId, visit_id: x.visitId, title: x.title, location: x.location, responsible: x.responsible, due_on: n0(x.dueOn), severity: x.severity, status: x.status, photo_path: x.photo || null }),
+  mood: (x: T.MoodItem) => ({ id: x.id, project_id: x.projectId, kind: x.kind, title: x.title, note: x.note, color: x.color || null, image_path: x.image || null, shared: x.shared, sort: x.sort || 0 }),
+  library: (x: T.LibraryItem) => ({ id: x.id, name: x.name, category: x.category, supplier_id: n0(x.supplierId), sku: x.sku, unit: x.unit, price: x.price ?? null, image_path: x.image || null, url: x.url || '', notes: x.notes, tags: x.tags || [] }),
   office: (o: T.Office) => ({ name: o.name, legal_name: o.legalName, city: o.city, address: o.address, phone: o.phone, email: n0(o.email), vat_id: o.vatId, logo_text: o.logoText, specialties: o.specialties || [] }),
   ticket: (t: T.Ticket) => ({ id: t.id, subject: t.subject, category: t.category, priority: E.ticketPriority.db(t.priority), status: E.ticketStatus.db(t.status) }),
   announcement: (a: T.Announcement) => ({ id: a.id, title: a.title, body: a.body, audience: a.audience, status: E.announcement.db(a.status), publish_at: a.at ? toTs(a.at) : null }),

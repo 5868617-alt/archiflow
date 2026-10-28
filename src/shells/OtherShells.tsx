@@ -1,6 +1,9 @@
 import { AccessibilityMenu } from './A11y';
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
+import { LuClipboardList, LuPalette, LuHardHat } from 'react-icons/lu';
+import { BrandMark, brandVars, brandColor } from '../pages/Branding';
+import { inkOn } from '../data/architect';
 import { LuHouse, LuPencilRuler, LuFileText, LuBadgeCheck, LuCalendarDays, LuMessageCircle, LuHistory, LuShieldCheck, LuGauge, LuBuilding2, LuUsers, LuCreditCard, LuTag, LuScrollText, LuChartBar, LuTicket, LuMegaphone, LuActivity, LuDatabase, LuSettings, LuMenu, LuBell, LuArrowRight } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { clientVisible, clientOf } from '../data/api';
@@ -16,9 +19,16 @@ export function PortalShell({ children }: any) {
   const vis = clientVisible(db, me);
   const pending = vis.approvals.filter((a) => a.status === 'ממתין').length;
   const client = clientOf(db, me.clientId);
+  const pids = new Set(vis.projects.map((p) => p.id));
+  const brief = db.clientBriefs.filter((b) => pids.has(b.projectId) && b.status !== 'draft');
+  const mood = db.moodItems.filter((m) => pids.has(m.projectId) && m.shared);
+  const reports = db.siteVisits.filter((v) => pids.has(v.projectId) && v.status === 'sent');
   const tabs = [
     { id: '', label: 'בית', icon: LuHouse },
     { id: 'approvals', label: 'לאישורי', icon: LuBadgeCheck, count: pending },
+    ...(brief.length ? [{ id: 'brief', label: 'שאלון פתיחה', icon: LuClipboardList, count: brief.filter((b) => b.status === 'sent').length }] : []),
+    ...(mood.length ? [{ id: 'inspiration', label: 'לוח השראה', icon: LuPalette, count: mood.filter((m) => !m.reaction).length }] : []),
+    ...(reports.length ? [{ id: 'site', label: 'דו״חות פיקוח', icon: LuHardHat }] : []),
     { id: 'drawings', label: 'שרטוטים', icon: LuPencilRuler },
     { id: 'documents', label: 'מסמכים', icon: LuFileText },
     { id: 'meetings', label: 'פגישות', icon: LuCalendarDays },
@@ -26,12 +36,12 @@ export function PortalShell({ children }: any) {
     { id: 'history', label: 'היסטוריית החלטות', icon: LuHistory },
   ];
   return (
-    <div className="portal">
+    <div className={cx('portal', inkOn(brandColor(db)) !== '#FFFFFF' && 'brand-light')} style={brandVars(db)}>
       <DemoStrip />
       <header className="portal-top">
         <div className="portal-top-inner">
           <div className="portal-brand">
-            <span className="portal-logo" aria-hidden>{db.office.logoText}</span>
+            <BrandMark size={40} />
             <div className="grow" style={{ minWidth: 0 }}>
               <div className="bold ellipsis">{db.office.name}</div>
               <div className="xs muted">פורטל לקוחות · {client?.name}</div>

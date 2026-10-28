@@ -29,6 +29,8 @@ import { HelpCenter, HelpArticle, SupportPage, TicketDetail } from './pages/Help
 import { PortalRouter } from './pages/Portal';
 import { AdminRouter } from './pages/Admin';
 import { AccessibilityStatement } from './pages/AccessibilityStatement';
+import { TimePage } from './pages/Time';
+import { LibraryPage } from './pages/Library';
 import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired } from './live/AuthLive';
 
 function Denied({ text }: any) {
@@ -68,6 +70,8 @@ function OfficeRoutes() {
     case 'expenses': return fin ? <ExpensesPage query={query} /> : <Denied text={live ? "הוצאות זמינות לבעלים ולמנהלי משרד." : "הוצאות זמינות לבעלים ולמנהלי משרד (הנחת דמו)."} />;
     case 'fees': return !fin ? <Denied text="שכר טרחה זמין לבעלים ולמנהלי משרד." /> : !hasFeature(db, 'fees') ? <LockedFeature feature="fees" /> : <FeesPage />;
     case 'team': return b ? <MemberDetail id={b} /> : <TeamPage query={query} />;
+    case 'time': return <TimePage query={query} />;
+    case 'library': return <LibraryPage query={query} />;
     case 'messages': return !hasFeature(db, 'client_portal') ? <LockedFeature feature="client_portal" /> : <MessagesPage query={query} />;
     case 'notifications': return <NotificationsPage />;
     case 'settings': return <SettingsPage query={query} />;

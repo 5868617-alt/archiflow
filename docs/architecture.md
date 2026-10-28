@@ -7,7 +7,7 @@
 Supabase  qbwaqngxdgmqgddxcuzv
    ├─ Auth (GoTrue)          הרשמה, אימות מייל, התחברות, איפוס סיסמה
    ├─ PostgREST              טבלאות (RLS) ופונקציות RPC
-   ├─ Storage                דליים פרטיים: plans, documents, receipts
+   ├─ Storage                דליים פרטיים: plans, documents, receipts, site-photos, moodboard, library, branding
    ├─ pg_cron                משימות שעתיות ויומיות, ושליחת תור המיילים כל דקה
    └─ Edge Function          send-emails → Resend (רק כשיש RESEND_API_KEY)
 ```
