@@ -316,6 +316,61 @@ export type Database = {
           },
         ]
       }
+      client_briefs: {
+        Row: {
+          answers: Json
+          id: string
+          office_id: string
+          project_id: string
+          sent_at: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          id?: string
+          office_id: string
+          project_id: string
+          sent_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          id?: string
+          office_id?: string
+          project_id?: string
+          sent_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_briefs_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_briefs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "client_briefs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_contacts: {
         Row: {
           client_id: string
@@ -701,6 +756,7 @@ export type Database = {
           office_id: string
           paid_at: string | null
           pct: number | null
+          phase_id: string | null
           project_id: string
           status: Database["public"]["Enums"]["fee_status"]
           title: string
@@ -712,6 +768,7 @@ export type Database = {
           office_id: string
           paid_at?: string | null
           pct?: number | null
+          phase_id?: string | null
           project_id: string
           status?: Database["public"]["Enums"]["fee_status"]
           title: string
@@ -723,6 +780,7 @@ export type Database = {
           office_id?: string
           paid_at?: string | null
           pct?: number | null
+          phase_id?: string | null
           project_id?: string
           status?: Database["public"]["Enums"]["fee_status"]
           title?: string
@@ -733,6 +791,13 @@ export type Database = {
             columns: ["office_id"]
             isOneToOne: false
             referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_milestones_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
             referencedColumns: ["id"]
           },
           {
@@ -864,6 +929,69 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_items: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          image_path: string | null
+          name: string
+          notes: string
+          office_id: string
+          price: number | null
+          sku: string
+          supplier_id: string | null
+          tags: string[]
+          unit: string
+          url: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          name: string
+          notes?: string
+          office_id: string
+          price?: number | null
+          sku?: string
+          supplier_id?: string | null
+          tags?: string[]
+          unit?: string
+          url?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          name?: string
+          notes?: string
+          office_id?: string
+          price?: number | null
+          sku?: string
+          supplier_id?: string | null
+          tags?: string[]
+          unit?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_items_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1054,6 +1182,32 @@ export type Database = {
           },
         ]
       }
+      member_rates: {
+        Row: {
+          hourly_cost: number
+          office_id: string
+          user_id: string
+        }
+        Insert: {
+          hourly_cost: number
+          office_id: string
+          user_id: string
+        }
+        Update: {
+          hourly_cost?: number
+          office_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_rates_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           author_id: string
@@ -1151,6 +1305,76 @@ export type Database = {
           },
           {
             foreignKeyName: "milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mood_items: {
+        Row: {
+          client_comment: string
+          color: string | null
+          created_at: string
+          id: string
+          image_path: string | null
+          kind: string
+          note: string
+          office_id: string
+          project_id: string
+          reaction: string | null
+          shared: boolean
+          sort: number
+          title: string
+        }
+        Insert: {
+          client_comment?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          kind?: string
+          note?: string
+          office_id: string
+          project_id: string
+          reaction?: string | null
+          shared?: boolean
+          sort?: number
+          title?: string
+        }
+        Update: {
+          client_comment?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          kind?: string
+          note?: string
+          office_id?: string
+          project_id?: string
+          reaction?: string | null
+          shared?: boolean
+          sort?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_items_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mood_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "mood_items_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1258,8 +1482,10 @@ export type Database = {
       office_settings: {
         Row: {
           admin_can_manage_billing: boolean
+          brand_color: string | null
           budget_warn_pct: number
           client_sees_budget_summary: boolean
+          logo_path: string | null
           member_can_see_finance: boolean
           member_sees_all_projects: boolean
           office_id: string
@@ -1267,8 +1493,10 @@ export type Database = {
         }
         Insert: {
           admin_can_manage_billing?: boolean
+          brand_color?: string | null
           budget_warn_pct?: number
           client_sees_budget_summary?: boolean
+          logo_path?: string | null
           member_can_see_finance?: boolean
           member_sees_all_projects?: boolean
           office_id: string
@@ -1276,8 +1504,10 @@ export type Database = {
         }
         Update: {
           admin_can_manage_billing?: boolean
+          brand_color?: string | null
           budget_warn_pct?: number
           client_sees_budget_summary?: boolean
+          logo_path?: string | null
           member_can_see_finance?: boolean
           member_sees_all_projects?: boolean
           office_id?: string
@@ -1410,6 +1640,79 @@ export type Database = {
           vat_id?: string | null
         }
         Relationships: []
+      }
+      permits: {
+        Row: {
+          authority: string
+          committee_on: string | null
+          created_at: string
+          expires_on: string | null
+          file_number: string
+          granted_on: string | null
+          id: string
+          info_file_on: string | null
+          notes: string
+          office_id: string
+          project_id: string
+          request_type: string
+          stage: string
+          submitted_on: string | null
+        }
+        Insert: {
+          authority?: string
+          committee_on?: string | null
+          created_at?: string
+          expires_on?: string | null
+          file_number?: string
+          granted_on?: string | null
+          id?: string
+          info_file_on?: string | null
+          notes?: string
+          office_id: string
+          project_id: string
+          request_type?: string
+          stage?: string
+          submitted_on?: string | null
+        }
+        Update: {
+          authority?: string
+          committee_on?: string | null
+          created_at?: string
+          expires_on?: string | null
+          file_number?: string
+          granted_on?: string | null
+          id?: string
+          info_file_on?: string | null
+          notes?: string
+          office_id?: string
+          project_id?: string
+          request_type?: string
+          stage?: string
+          submitted_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permits_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "permits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_annotations: {
         Row: {
@@ -1777,6 +2080,131 @@ export type Database = {
           },
         ]
       }
+      project_consultants: {
+        Row: {
+          created_at: string
+          discipline: string
+          due_on: string | null
+          email: string
+          id: string
+          name: string
+          notes: string
+          office_id: string
+          phone: string
+          project_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          discipline: string
+          due_on?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          office_id: string
+          phone?: string
+          project_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          discipline?: string
+          due_on?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string
+          office_id?: string
+          phone?: string
+          project_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_consultants_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_consultants_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_consultants_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_phases: {
+        Row: {
+          budget_hours: number | null
+          created_at: string
+          done_on: string | null
+          id: string
+          idx: number
+          name: string
+          office_id: string
+          project_id: string
+          started_on: string | null
+          status: string
+        }
+        Insert: {
+          budget_hours?: number | null
+          created_at?: string
+          done_on?: string | null
+          id?: string
+          idx: number
+          name: string
+          office_id: string
+          project_id: string
+          started_on?: string | null
+          status?: string
+        }
+        Update: {
+          budget_hours?: number | null
+          created_at?: string
+          done_on?: string | null
+          id?: string
+          idx?: number
+          name?: string
+          office_id?: string
+          project_id?: string
+          started_on?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phases_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_status_history: {
         Row: {
           changed_at: string
@@ -2083,6 +2511,141 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      site_findings: {
+        Row: {
+          created_at: string
+          due_on: string | null
+          id: string
+          location: string
+          office_id: string
+          photo_path: string | null
+          project_id: string
+          responsible: string
+          severity: string
+          status: string
+          title: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_on?: string | null
+          id?: string
+          location?: string
+          office_id: string
+          photo_path?: string | null
+          project_id: string
+          responsible?: string
+          severity?: string
+          status?: string
+          title: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          due_on?: string | null
+          id?: string
+          location?: string
+          office_id?: string
+          photo_path?: string | null
+          project_id?: string
+          responsible?: string
+          severity?: string
+          status?: string
+          title?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_findings_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_findings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "site_findings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_findings_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "site_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_visits: {
+        Row: {
+          attendees: string
+          created_at: string
+          created_by: string | null
+          id: string
+          office_id: string
+          project_id: string
+          sent_at: string | null
+          status: string
+          summary: string
+          visit_date: string
+        }
+        Insert: {
+          attendees?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          office_id: string
+          project_id: string
+          sent_at?: string | null
+          status?: string
+          summary?: string
+          visit_date?: string
+        }
+        Update: {
+          attendees?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          office_id?: string
+          project_id?: string
+          sent_at?: string | null
+          status?: string
+          summary?: string
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_visits_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "site_visits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "site_visits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spec_alternatives: {
         Row: {
@@ -2721,6 +3284,64 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          hours: number
+          id: string
+          note: string
+          office_id: string
+          phase_idx: number | null
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date?: string
+          hours: number
+          id?: string
+          note?: string
+          office_id: string
+          phase_idx?: number | null
+          project_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          hours?: number
+          id?: string
+          note?: string
+          office_id?: string
+          phase_idx?: number | null
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_office_id_fkey"
+            columns: ["office_id"]
+            isOneToOne: false
+            referencedRelation: "offices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_finance"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_template_items: {
         Row: {
           id: string
@@ -2856,6 +3477,24 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      admin_offices_overview: {
+        Args: never
+        Returns: {
+          city: string
+          created_at: string
+          id: string
+          last_activity: string
+          mrr: number
+          name: string
+          owner_email: string
+          owner_name: string
+          plan_id: string
+          projects: number
+          status: Database["public"]["Enums"]["sub_status"]
+          storage_bytes: number
+          users: number
+        }[]
+      }
       admin_set_subscription_status: {
         Args: {
           p_note: string
@@ -2868,6 +3507,16 @@ export type Database = {
         Args: { p_annotation: string; p_assignee: string; p_due?: string }
         Returns: string
       }
+      app_log_activity: {
+        Args: {
+          p_link?: string
+          p_office: string
+          p_project: string
+          p_text: string
+        }
+        Returns: undefined
+      }
+      app_snapshot: { Args: { p_office?: string }; Returns: Json }
       apply_template: {
         Args: { p_assignee: string; p_project: string; p_template: string }
         Returns: number
@@ -2892,6 +3541,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      email_sender_config: { Args: { p_secret: string }; Returns: Json }
       invite_client_contact: { Args: { p_contact: string }; Returns: string }
       invite_member: {
         Args: {
@@ -2901,6 +3551,12 @@ export type Database = {
           p_role: Database["public"]["Enums"]["invite_role"]
         }
         Returns: string
+      }
+      my_context: { Args: never; Returns: Json }
+      office_branding: { Args: { p_office: string }; Returns: Json }
+      react_mood_item: {
+        Args: { p_comment?: string; p_item: string; p_reaction: string }
+        Returns: undefined
       }
       request_approval: {
         Args: {
@@ -2926,13 +3582,34 @@ export type Database = {
         }
         Returns: string
       }
+      resend_invitation: { Args: { p_invitation: string }; Returns: string }
       resume_subscription: { Args: { p_office: string }; Returns: undefined }
+      send_approval_reminder: {
+        Args: { p_approval: string }
+        Returns: undefined
+      }
+      send_client_brief: { Args: { p_project: string }; Returns: string }
+      send_fee_request: { Args: { p_fee: string }; Returns: undefined }
+      send_meeting_email: {
+        Args: { p_kind: string; p_meeting: string }
+        Returns: number
+      }
+      send_purchase_order: { Args: { p_po: string }; Returns: undefined }
+      send_site_report: { Args: { p_visit: string }; Returns: number }
+      set_office_branding: {
+        Args: { p_color: string; p_logo: string; p_office: string }
+        Returns: undefined
+      }
       set_project_status: {
         Args: {
           p_note?: string
           p_project: string
           p_status: Database["public"]["Enums"]["project_status"]
         }
+        Returns: undefined
+      }
+      submit_client_brief: {
+        Args: { p_answers: Json; p_brief: string; p_final?: boolean }
         Returns: undefined
       }
     }
