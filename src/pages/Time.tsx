@@ -18,7 +18,7 @@ export function TimePage({ query }: any) {
   useEffect(() => { if (query.log) setLog(true); }, [query.log]);
   return (
     <div>
-      <PageHead title="שעות ורווחיות" sub={mgr ? 'רישום שעות לפי פרויקט ושלב, וכמה כל פרויקט באמת מרוויח.' : 'רישום השעות שלך לפי פרויקט ושלב.'} actions={<Btn kind="primary" icon={LuPlus} onClick={() => setLog(true)}>רישום שעות</Btn>} />
+      <PageHead title="שעות ורווחיות" sub={mgr ? 'רישום שעות לפי פרויקט ושלב, וכמה כל פרויקט באמת מרוויח.' : 'רישום השעות שלך לפי פרויקט ושלב.'} actions={<Btn kind={tab === 'mine' ? 'primary' : undefined} icon={LuPlus} onClick={() => setLog(true)}>רישום שעות</Btn>} />
       {mgr ? <Tabs value={tab} onChange={setTab} tabs={[{ id: 'mine', label: 'השעות שלי', icon: LuClock }, { id: 'team', label: 'צוות', icon: LuUsers }, { id: 'profit', label: 'רווחיות פרויקטים', icon: LuTrendingUp }, { id: 'rates', label: 'תעריפי עלות', icon: LuCoins }]} /> : null}
       {tab === 'mine' ? <MyTime /> : null}
       {tab === 'team' && mgr ? <TeamTime /> : null}

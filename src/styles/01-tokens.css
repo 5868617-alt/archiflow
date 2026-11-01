@@ -50,6 +50,10 @@
 
   /* shape */
   --r-sm: 5px; --r-md: 8px; --r-lg: 14px; --r-xl: 18px;
+  /* 8pt spacing grid (4px for the smallest gaps). Use these – never 6, 10, 14, 18px. */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
+  /* smallest comfortable tap target on touch screens (Apple HIG / Material) */
+  --tap: 44px;
   --ease: cubic-bezier(.2, .7, .2, 1);
   --sidebar-w: 248px;
   --topbar-h: 60px;
@@ -94,3 +98,6 @@
   --scrim: rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
+
+/* phones: body text never under 16px */
+@media (max-width: 700px) { :root { --fs-md: 1rem; } }

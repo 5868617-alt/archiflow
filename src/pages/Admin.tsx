@@ -243,7 +243,7 @@ function Pricing() {
                 <Field label="משתמשים (ריק = ללא הגבלה)" htmlFor={`pr-u-${p.id}`}><Input id={`pr-u-${p.id}`} type="number" min={1} value={val(p.id, 'u', p.limits.users ?? '')} onChange={(e: any) => setDraft({ ...draft, [p.id + 'u']: e.target.value })} /></Field>
                 <Field label="פרויקטים פעילים" htmlFor={`pr-p-${p.id}`}><Input id={`pr-p-${p.id}`} type="number" min={1} value={val(p.id, 'p', p.limits.activeProjects ?? '')} onChange={(e: any) => setDraft({ ...draft, [p.id + 'p']: e.target.value })} /></Field>
               </div>
-              <Btn kind="primary" icon={LuSave} onClick={() => setConfirm(() => () => {
+              <Btn kind={Object.keys(draft).some((k) => k.startsWith(p.id)) ? 'primary' : undefined} disabled={!Object.keys(draft).some((k) => k.startsWith(p.id))} icon={LuSave} onClick={() => setConfirm(() => () => {
                 const m = Number(val(p.id, 'm', p.priceMonthly)), y = Number(val(p.id, 'y', p.priceYearlyPerMonth));
                 if (m !== p.priceMonthly) run(A.setPlanPrice, p.id, 'priceMonthly', m);
                 if (y !== p.priceYearlyPerMonth) run(A.setPlanPrice, p.id, 'priceYearlyPerMonth', y);

@@ -134,7 +134,7 @@ function ExpenseTable({ rows, hideProject, projectId }: any) {
   const [adding, setAdding] = useState(false);
   const total = rows.reduce((a: number, e: T.Expense) => a + e.amount, 0);
   return (
-    <Card title={`הוצאות (${rows.length})`} pad={false} actions={<Btn size="sm" kind="primary" icon={LuPlus} onClick={() => setAdding(true)}>הוצאה</Btn>}>
+    <Card title={`הוצאות (${rows.length})`} pad={false} actions={<Btn size="sm" kind={projectId ? 'primary' : undefined} icon={LuPlus} onClick={() => setAdding(true)}>הוצאה</Btn>}>
       <DataTable rows={rows} onRow={setEdit} pageSize={10} initialSort={{ key: 'date', dir: -1 }} empty={<Empty title="אין הוצאות בסינון הזה" />} columns={[
         { key: 'date', label: 'תאריך', render: (e: T.Expense) => <span className="small nowrap">{date(e.date)}</span> },
         { key: 'description', label: 'תיאור', render: (e: T.Expense) => <div className="col" style={{ gap: 0 }}><span>{e.description}</span><span className="xs muted">{e.category}{e.poId ? ' · ' + (byId(db.purchaseOrders, e.poId)?.number || '') : ''}</span></div> },

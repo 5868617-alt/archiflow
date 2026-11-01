@@ -55,7 +55,7 @@ export function BrandingCard() {
         <div className="brand-preview" style={{ ['--brand' as any]: valid ? color : DEFAULT_BRAND, ['--brand-ink' as any]: inkOn(valid ? color : DEFAULT_BRAND) }}>
           <BrandMark size={30} /><b>{db.office.name}</b><span className="grow" /><span className="small">פורטל לקוחות</span>
         </div>
-        {can ? <div><Btn kind="primary" disabled={!valid || color === brandColor(db)} onClick={() => { run(A.setBranding, { color }); toast('צבע המותג נשמר'); }}>שמירת הצבע</Btn></div> : <span className="small muted">רק בעלים ומנהלים יכולים לשנות את המיתוג.</span>}
+        {can ? <div><Btn disabled={!valid || color === brandColor(db)} onClick={() => { run(A.setBranding, { color }); toast('צבע המותג נשמר'); }}>שמירת הצבע</Btn></div> : <span className="small muted">רק בעלים ומנהלים יכולים לשנות את המיתוג.</span>}
         <Callout kind="info">הטקסט על צבע המותג נבחר אוטומטית (בהיר או כהה) כך שיישאר קריא לכולם.</Callout>
       </div>
     </Card>

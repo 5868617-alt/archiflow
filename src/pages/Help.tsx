@@ -43,7 +43,7 @@ export function HelpCenter() {
           <Card title="שאלות נפוצות">
             <div className="col">{faqs.map((f, i) => (
               <div key={i} style={{ borderBottom: '1px solid var(--line)' }}>
-                <button type="button" className="row between w100" style={{ background: 'none', border: 0, padding: '10px 0', cursor: 'pointer', textAlign: 'right', font: 'inherit', color: 'inherit' }} onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}><b className="small">{f.q}</b><LuChevronDown aria-hidden style={{ width: 16, transform: open === i ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} /></button>
+                <button type="button" className="row between w100 faq-q" style={{ background: 'none', border: 0, padding: '12px 0', cursor: 'pointer', textAlign: 'right', font: 'inherit', color: 'inherit' }} onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}><b className="small">{f.q}</b><LuChevronDown aria-hidden style={{ width: 16, transform: open === i ? 'rotate(180deg)' : undefined, transition: 'transform .15s' }} /></button>
                 {open === i ? <p className="small soft" style={{ paddingBottom: 10 }}>{f.a}</p> : null}
               </div>
             ))}</div>

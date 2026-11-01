@@ -77,10 +77,13 @@ function audit(mobile) {
   for (const [k, v] of Object.entries(ids)) if (v > 1) out.push({ rule: 'dup-id', what: `#${k} ×${v}` });
   // main landmark
   if (!document.querySelector('main, [role=main]')) add('no-main', document.body);
-  // touch targets on phones (WCAG 2.5.8: 24px minimum; we aim for 40)
+  // touch targets on phones
   if (mobile) for (const el of document.querySelectorAll('button, a[href], select, input:not([type=hidden]):not([type=checkbox]):not([type=radio])')) {
     if (!visible(el) || el.classList.contains('sr-only') || el.closest('.tbl-stack td') && el.tagName === 'A') continue;
-    const r = el.getBoundingClientRect(); if (r.height < 24 || r.width < 24) add('target', el, `${Math.round(r.width)}×${Math.round(r.height)}`);
+    // golden rule 6: buttons and fields at least 44px; inline text links (WCAG 2.5.8 exception) at least 24px
+    const inline = el.matches('a, button.linkish, .crumbs button, button.badge, .cal-ev, .wk-ev, .ptl-row, .sr-item') || el.closest('.tbl-stack td, .kv, p');
+    const min = inline ? 24 : 44;
+    const r = el.getBoundingClientRect(); if (r.height < min - 0.5 || (!inline && r.width < 24)) add('target', el, `${Math.round(r.width)}×${Math.round(r.height)} (צריך ${min})`);
   }
   return out;
 }
