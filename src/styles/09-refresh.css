@@ -1,0 +1,61 @@
+/* ArchiFlow – "the best of three" design layer (November 2026).
+   A · clean and calm: quieter background, one focal point on the home screen, fewer competing buttons.
+   C · architectural magazine: big bold Rubik headings and numbers, tight letter-spacing, thin rules.
+   B · night: a glowing primary button and an accent bar on the active item in dark mode.
+   Everything else comes from the tokens; motion is still switched off by reduced motion / "עצירת אנימציות". */
+
+/* ---------- C: bold typography ---------- */
+h1, h2, h3, .display, .page-head h1, .hero-title, .modal-head h2, .card-head h2, .sb-name, .public-top .brand { font-family: var(--font-display); }
+.page-head h1 { font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem); font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; }
+.hero-title { font-weight: 800; font-size: clamp(2rem, 1.2rem + 2.6vw, 3.25rem); letter-spacing: -0.03em; line-height: 1.02; }
+.portal-hero h1, .display { font-weight: 800; letter-spacing: -0.025em; }
+.card-head h2 { font-weight: 700; letter-spacing: -0.01em; }
+.modal-head h2 { font-weight: 800; letter-spacing: -0.015em; }
+.sb-name { font-weight: 800; letter-spacing: -0.01em; }
+/* numbers as a design element */
+.s-value, .hero-cell .hc-v, .stat .s-value { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hero-cell .hc-v { font-size: clamp(1.75rem, 1.4rem + 1vw, 2.25rem); }
+/* small uppercase-style labels read as captions, not as content */
+.eyebrow, .s-label, .hc-k { letter-spacing: 0.02em; }
+
+/* ---------- A: calmer surfaces ---------- */
+body { background:
+  radial-gradient(900px 520px at 100% -10%, rgba(var(--accent-rgb), 0.08), transparent 60%),
+  var(--bg); background-attachment: fixed; }
+.hero::before, .hero::after { opacity: .38; }
+.card { box-shadow: var(--shadow-1); }
+.card.link:hover { box-shadow: 0 12px 28px -16px rgba(var(--accent-rgb), 0.6), var(--shadow-1); }
+
+/* ---------- A: the focal point on the home screen ---------- */
+.hero-focus { position: relative; z-index: 1; margin: 0 28px 24px; padding: 16px 20px; border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-inline-start: 4px solid var(--accent-bright);
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; color: var(--on-navy); }
+.hero-focus .hf-ic { grid-row: 1 / 4; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--grad); color: var(--accent-ink); }
+.hero-focus .hf-ic svg { width: 22px; height: 22px; }
+.hero-focus .hf-tag, .hero-focus .hf-title, .hero-focus .hf-sub { grid-column: 2; min-width: 0; }
+.hero-focus .hf-tag { font-size: var(--fs-xs); font-weight: 700; color: var(--accent-bright); letter-spacing: 0.02em; }
+.hero-focus .hf-title { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); line-height: 1.3; color: var(--on-navy); }
+.hero-focus .hf-sub { font-size: var(--fs-sm); color: var(--on-navy-2); }
+.hero-focus .hf-go { grid-column: 3; grid-row: 1 / 4; }
+.hero-focus .hf-go.btn { background: var(--on-navy); color: var(--navy); border-color: transparent; font-weight: 700; }
+.hero-focus .hf-go.btn:hover { background: #fff; }
+.hero-focus .hf-more { font-size: var(--fs-xs); color: var(--on-navy-2); }
+@media (max-width: 760px) {
+  .hero-focus { margin: 0 16px 16px; grid-template-columns: auto minmax(0, 1fr); }
+  .hero-focus .hf-ic { grid-row: 1 / 3; width: 40px; height: 40px; }
+  .hero-focus .hf-sub { grid-column: 1 / 3; }
+  .hero-focus .hf-go { grid-column: 1 / 3; grid-row: auto; margin-top: 8px; width: 100%; }
+}
+html[data-hc] .hero-focus { background: #000; border-color: #fff; }
+
+/* ---------- B: night mode details ---------- */
+:root[data-theme="dark"] .btn.primary { box-shadow: 0 8px 24px -10px rgba(var(--accent-rgb), 0.75); }
+:root[data-theme="dark"] .sb-item.active { box-shadow: inset -3px 0 0 var(--accent-bright); }
+:root[data-theme="dark"] .card { border-color: var(--line); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .btn.primary { box-shadow: 0 8px 24px -10px rgba(var(--accent-rgb), 0.75); }
+  :root:not([data-theme="light"]) .sb-item.active { box-shadow: inset -3px 0 0 var(--accent-bright); }
+}
+
+/* the plain-font accessibility option still wins */
+html[data-plain] h1, html[data-plain] h2, html[data-plain] h3, html[data-plain] .s-value, html[data-plain] .hc-v { font-family: var(--font-body); letter-spacing: 0; }

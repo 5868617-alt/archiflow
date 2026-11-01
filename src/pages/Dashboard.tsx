@@ -1,5 +1,5 @@
 import { IS_LIVE } from '../data/dates';
-import { LuListChecks, LuClock, LuCalendarDays, LuBadgeCheck, LuWallet, LuPlus, LuUpload, LuReceipt, LuCalendarPlus, LuSend, LuArrowLeft, LuFolderKanban, LuTriangleAlert, LuCoins } from 'react-icons/lu';
+import { LuListChecks, LuClock, LuCalendarDays, LuBadgeCheck, LuWallet, LuPlus, LuUpload, LuReceipt, LuCalendarPlus, LuSend, LuArrowLeft, LuFolderKanban, LuTriangleAlert, LuCoins, LuTarget, LuHardHat, LuSparkles } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { hasFeature, visibleProjects, visibleProjectIds, isOverdue, isToday, projectAlerts, canSeeFinance, projectFinance, budgetHealth, contactOf, projectOf } from '../data/api';
 import { DEMO_TODAY, todayISO, daysFromToday } from '../data/dates';
@@ -56,11 +56,10 @@ export function Dashboard() {
           <div className="hero-actions">
             <Btn kind="primary" icon={LuPlus} onClick={() => nav('/tasks?new=1')}>משימה</Btn>
             <Btn icon={LuCalendarPlus} onClick={() => nav('/calendar?new=1')}>פגישה</Btn>
-            <Btn icon={LuUpload} onClick={() => nav('/plans?upload=1')}>שרטוט</Btn>
-            {fin ? <Btn icon={LuReceipt} onClick={() => nav('/expenses?new=1')}>הוצאה</Btn> : null}
             <Btn icon={LuSend} onClick={() => nav('/approvals?new=1')}>שליחה לאישור</Btn>
           </div>
         </div>
+        <FocusNow />
         <div className="hero-strip">
           <HeroCell label="משימות להיום" icon={LuListChecks} value={today.length} meta="משויכות אליך" onClick={() => nav('/tasks?view=today')} />
           <HeroCell label="משימות באיחור" icon={LuClock} value={late.length} meta={late[0] ? `הוותיקה: ${relDay([...late].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0].dueDate)}` : 'הכול בזמן'} tone={late.length ? 'bad' : ''} onClick={() => nav('/tasks?view=late')} />
@@ -160,6 +159,35 @@ export function Dashboard() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** the one thing that needs you most right now – the focal point of the home screen */
+function FocusNow() {
+  const { db, me, nav } = useStore();
+  const pids = visibleProjectIds(db, me);
+  const fin = canSeeFinance(db, me);
+  const days = (d: string) => -daysFromToday(d);
+  const items: { tag: string; title: string; sub: string; go: string; label: string; icon: any }[] = [];
+  const late = db.tasks.filter((t) => t.assigneeId === me.id && isOverdue(t)).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  for (const t of late) items.push({ tag: 'משימה שלך באיחור', title: t.title, sub: `${projectOf(db, t.projectId)?.name || 'כללי'} · באיחור של ${days(t.dueDate)} ימים`, go: `/tasks?open=${t.id}`, label: 'לפתיחת המשימה', icon: LuListChecks });
+  const lateAp = db.approvals.filter((a) => pids.has(a.projectId) && a.status === 'ממתין' && a.dueAt && a.dueAt < todayISO).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  for (const a of lateAp) items.push({ tag: 'לקוח לא ענה', title: `${a.title} – מחכה ל${contactOf(db, a.contactId)?.contact.name || 'לקוח'}`, sub: `${projectOf(db, a.projectId)?.name} · עבר היעד לפני ${days(a.dueAt)} ימים`, go: `/approvals?open=${a.id}`, label: 'לשליחת תזכורת', icon: LuBadgeCheck });
+  const findings = (db.siteFindings || []).filter((f) => pids.has(f.projectId) && f.status === 'open' && f.severity === 'high');
+  for (const f of findings) items.push({ tag: 'ממצא פיקוח חמור', title: f.title, sub: `${projectOf(db, f.projectId)?.name}${f.responsible ? ' · באחריות ' + f.responsible : ''}`, go: `/projects/${f.projectId}/site`, label: 'לפיקוח', icon: LuHardHat });
+  if (fin) for (const f of db.feeMilestones.filter((x) => pids.has(x.projectId) && x.status === 'באיחור')) items.push({ tag: 'תשלום באיחור', title: `${f.title} – ${ils(f.amount)}`, sub: projectOf(db, f.projectId)?.name || '', go: `/projects/${f.projectId}/fees`, label: 'לשכר הטרחה', icon: LuCoins });
+  const top = items[0];
+  if (!top) return (
+    <div className="hero-focus"><span className="hf-ic"><LuSparkles aria-hidden /></span><span className="hf-tag">הכי חשוב עכשיו</span><span className="hf-title">אין שום דבר דחוף. יום טוב לתכנון.</span><span className="hf-sub">כל המשימות והאישורים בזמן.</span></div>
+  );
+  return (
+    <div className="hero-focus" role="region" aria-label="הכי חשוב עכשיו">
+      <span className="hf-ic"><top.icon aria-hidden /></span>
+      <span className="hf-tag">הכי חשוב עכשיו · {top.tag}</span>
+      <span className="hf-title">{top.title}</span>
+      <span className="hf-sub">{top.sub}{items.length > 1 ? <span className="hf-more"> · ועוד {items.length - 1} דברים שמחכים לך</span> : null}</span>
+      <Btn className="hf-go" icon={LuArrowLeft} onClick={() => nav(top.go)}>{top.label}</Btn>
     </div>
   );
 }

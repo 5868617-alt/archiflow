@@ -1,4 +1,5 @@
-/* ArchiFlow design system
+/* ArchiFlow design system – "the best of three": clean calm surfaces and one focal point (A),
+   bold Rubik headings and numbers (C), and a glowing plum-night dark mode (B).
    Layout concept: drafting-table workspace — a navy "title block" sidebar on the right (RTL),
    blush-paper workspace with a deep plum sidebar; peach and pink (coolors efb0a1-f4afb4) carry primary actions, highlights and the animated gradient. */
 :root {
@@ -43,8 +44,8 @@
   --scrim: rgba(13, 21, 38, 0.48);
 
   /* type */
-  --font-display: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
-  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --font-display: "Rubik", "Heebo", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --font-body: "Heebo", "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --fs-xs: 0.78125rem; --fs-sm: 0.875rem; --fs-md: 0.9375rem; --fs-lg: 1.0625rem; --fs-xl: 1.3125rem; --fs-2xl: 1.6875rem; --fs-3xl: 2.25rem;
 
@@ -62,10 +63,10 @@
   :root:not([data-theme="light"]) {
   --grad: linear-gradient(120deg, #EFB0A1 0%, #F4AFB4 52%, #D9A5C9 100%);
   --accent-strong: #F0B6C6;
-    --bg: #1A1418; --paper: #1E171C; --surface: #241C22; --surface-2: #2A2128; --surface-3: #332830;
-    --line: #3A2E36; --line-strong: #4B3C46;
-    --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B3A2AA; --ok-ink: #062316;
-    --navy: #140E12; --navy-2: #21171E; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
+    --bg: #170F14; --paper: #1A1217; --surface: #22171E; --surface-2: #2C1F28; --surface-3: #35262F;
+    --line: #3A2A34; --line-strong: #4D3843;
+    --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B8A4AE; --ok-ink: #062316;
+    --navy: #120B10; --navy-2: #1E141B; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
     --accent: #F2B9AC; --accent-hover: #F7CBC0; --accent-bright: #F4AFB4; --accent-ink: #2B2228; --accent-soft: rgba(239, 176, 161, 0.16); --accent-rgb: 244, 175, 180;
     --blueprint: #B98C9B; --blueprint-faint: rgba(244, 175, 180, 0.08);
     --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
@@ -82,10 +83,10 @@
 :root[data-theme="dark"] {
   --grad: linear-gradient(120deg, #EFB0A1 0%, #F4AFB4 52%, #D9A5C9 100%);
   --accent-strong: #F0B6C6;
-  --bg: #1A1418; --paper: #1E171C; --surface: #241C22; --surface-2: #2A2128; --surface-3: #332830;
-  --line: #3A2E36; --line-strong: #4B3C46;
-  --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B3A2AA; --ok-ink: #062316;
-  --navy: #140E12; --navy-2: #21171E; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
+  --bg: #170F14; --paper: #1A1217; --surface: #22171E; --surface-2: #2C1F28; --surface-3: #35262F;
+  --line: #3A2A34; --line-strong: #4D3843;
+  --ink: #F6EDF0; --ink-2: #D3C3CA; --ink-3: #B8A4AE; --ok-ink: #062316;
+  --navy: #120B10; --navy-2: #1E141B; --navy-3: #33242E; --on-navy: #F6EDF0; --on-navy-2: #BBA6B1;
   --accent: #F2B9AC; --accent-hover: #F7CBC0; --accent-bright: #F4AFB4; --accent-ink: #2B2228; --accent-soft: rgba(239, 176, 161, 0.16); --accent-rgb: 244, 175, 180;
   --blueprint: #B98C9B; --blueprint-faint: rgba(244, 175, 180, 0.08);
   --plan-paper: #121B30; --plan-ink: #D9DEEA; --plan-fill: #1A253E;
