@@ -12,7 +12,16 @@ import { ils, ils2, date, relDay } from '../lib/format';
 const priceOf = (p: T.SubscriptionPlan, cycle: string) => (cycle === 'שנתי' ? p.priceYearlyPerMonth ?? p.priceMonthly : p.priceMonthly);
 
 export function SubBanner() {
-  const { db, me, nav, live } = useStore();
+  const { db, me, nav, path } = useStore();
+  const due = db.office?.deletionDueAt;
+  // the office is scheduled for deletion: every team member sees it on every screen (except where it is managed)
+  if (due && me.role !== 'client' && me.role !== 'super_admin' && !path.startsWith('/settings/data') && !path.includes('tab=data'))
+    return <div style={{ marginBottom: 16 }}><Callout kind="bad" title={`המשרד מתוכנן למחיקה ב-${date(due)}`}>כל הנתונים יימחקו לצמיתות בתאריך הזה, אלא אם הבקשה תבוטל. {me.role === 'owner' ? <button type="button" className="linkish" onClick={() => nav('/settings/data')}>לביטול או להורדת הנתונים</button> : 'לשאלות – פנו לבעלת המשרד.'}</Callout></div>;
+  return <SubStatusBanner />;
+}
+
+function SubStatusBanner() {
+  const { db, me, nav } = useStore();
   const sub = db.officeSubscription;
   const owner = me.role === 'owner' || me.role === 'admin';
   if (sub.status === 'פעיל') return null;

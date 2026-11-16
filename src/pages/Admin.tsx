@@ -1,11 +1,12 @@
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
-import { LuBuilding2, LuUsers, LuCreditCard, LuTicket, LuTrendingUp, LuActivity, LuPlus, LuSend, LuMegaphone, LuShieldAlert, LuCircleAlert, LuInfo, LuTriangleAlert, LuSave, LuEye } from 'react-icons/lu';
+import { LuBuilding2, LuUsers, LuCreditCard, LuTicket, LuTrendingUp, LuActivity, LuPlus, LuSend, LuMegaphone, LuShieldAlert, LuCircleAlert, LuInfo, LuTriangleAlert, LuSave, LuEye, LuTrash2, LuFolderX } from 'react-icons/lu';
+import { removeOrphanFiles } from '../live/sync';
 import { useStore } from '../data/store';
 import { A, uid, byId, ROLE_SHORT } from '../data/api';
 import { FEATURE_DEFS } from '../data/seed';
 import type * as T from '../data/types';
-import { todayISO, nowStamp, D } from '../data/dates';
+import { todayISO, nowStamp, D, daysFromToday } from '../data/dates';
 import { PageHead, Btn, Card, KV, StatusBadge, Badge, Modal, Field, Input, Select, Textarea, Empty, Callout, Stat, Progress, DataTable, Chips, SearchBox, Switch, Tabs, cx, DemoTag, AssumeTag, FutureTag, Avatar, Confirm } from '../ui/core';
 import { Columns, Donut, Spark } from '../ui/charts';
 import { parseRoute } from '../lib/route';
@@ -57,7 +58,8 @@ function Overview() {
           <Card title="MRR – 8 חודשים אחרונים" actions={<DemoTag />}><Columns data={['מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳'].map((l, i) => ({ label: l, value: i === 7 ? mrr : Math.min(mrrTrend[i], mrr) }))} highlightLast /></Card>
           <Card title="דורשים טיפול" pad={false}>
             <div className="list">
-              {offs.filter((o) => ['חוב פתוח', 'יבוטל בסוף התקופה'].includes(o.status) || (o.status === 'תקופת ניסיון')).map((o) => <div key={o.id} className="li click" onClick={() => nav(`/admin/offices/${o.id}`)}><span className={cx('li-ic', o.status === 'חוב פתוח' ? 'bad' : o.status === 'תקופת ניסיון' ? 'info' : 'warn')}><LuBuilding2 aria-hidden /></span><div className="li-main"><div className="li-title">{o.name}</div><div className="li-sub">{o.ownerName} · {o.planId === 'pro' ? 'Pro' : 'Starter'}</div></div><StatusBadge s={o.status} /></div>)}
+              {offs.filter((o) => o.deletionDueAt).map((o) => <div key={'del' + o.id} className="li click" onClick={() => nav(`/admin/offices/${o.id}`)}><span className="li-ic bad"><LuTrash2 aria-hidden /></span><div className="li-main"><div className="li-title">{o.name}</div><div className="li-sub">בקשת מחיקה · {daysFromToday(o.deletionDueAt!) > 0 ? `אפשר למחוק מ-${date(o.deletionDueAt!)}` : 'תקופת ההמתנה הסתיימה'}</div></div><Badge tone="bad">מחיקה</Badge></div>)}
+              {offs.filter((o) => !o.deletionDueAt && (['חוב פתוח', 'יבוטל בסוף התקופה'].includes(o.status) || (o.status === 'תקופת ניסיון'))).map((o) => <div key={o.id} className="li click" onClick={() => nav(`/admin/offices/${o.id}`)}><span className={cx('li-ic', o.status === 'חוב פתוח' ? 'bad' : o.status === 'תקופת ניסיון' ? 'info' : 'warn')}><LuBuilding2 aria-hidden /></span><div className="li-main"><div className="li-title">{o.name}</div><div className="li-sub">{o.ownerName} · {o.planId === 'pro' ? 'Pro' : 'Starter'}</div></div><StatusBadge s={o.status} /></div>)}
             </div>
           </Card>
         </div>
@@ -145,12 +147,59 @@ function OfficeDetail({ id }: { id: string }) {
           <Card title="יומן ביקורת למשרד" pad={false}><div className="list">{db.auditLog.filter((a) => a.officeId === id).slice(0, 8).map((a) => <div key={a.id} className="li"><div className="li-main"><div className="li-title small">{a.actor}: {a.action}</div><div className="li-sub">{a.target}</div></div><span className="xs muted">{ago(a.at)}</span></div>)}{!db.auditLog.some((a) => a.officeId === id) ? <Empty title="אין רשומות" /> : null}</div></Card>
         </div>
         <div className="stack-lg" style={{ minWidth: 0 }}>
+          {o.deletionDueAt ? <DeletionCard o={o} /> : null}
           <Callout kind="assume" icon={LuShieldAlert} title="גישה לתוכן המשרד">ה-Super Admin רואה נתוני מנוי ושימוש בלבד, לא את תוכן הפרויקטים. התחזות למשרד לצורכי תמיכה היא החלטה פתוחה, ואם תאושר – כל כניסה תירשם ביומן הביקורת.</Callout>
           <Card title="פניות תמיכה">{db.tickets.filter((t) => t.officeId === id).map((t) => <div key={t.id} className="row between small" style={{ padding: '4px 0' }}><button type="button" className="linkish" onClick={() => nav(`/admin/tickets/${t.id}`)}>{t.subject}</button><StatusBadge s={t.status} /></div>)}{!db.tickets.some((t) => t.officeId === id) ? <span className="small muted">אין</span> : null}</Card>
         </div>
       </div>
       {st ? <Confirm title="שינוי מצב מנוי" onClose={() => setSt(null)} onConfirm={() => { run(A.setOfficeStatus, id, st); toast(`מצב המנוי של ${o.name} שונה ל"${st}" ונרשם ביומן הביקורת`); }}>להעביר את {o.name} למצב "{st}"? הפעולה תירשם ביומן הביקורת (בדמו – מדומה).</Confirm> : null}
     </div>
+  );
+}
+
+function DeletionCard({ o }: { o: T.PlatformOffice }) {
+  const { run, toast, nav } = useStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const ready = daysFromToday(o.deletionDueAt!) <= 0;
+  const demoOwn = !IS_LIVE && o.id === 'off_1';
+  return (
+    <Card title="בקשת מחיקה" icon={LuTrash2}>
+      <div className="stack">
+        <KV items={[['ביקשה', date(o.deletionRequestedAt!)], ['אפשר למחוק מ-', date(o.deletionDueAt!)]]} />
+        {ready ? <span className="small">תקופת ההמתנה הסתיימה ובעלת המשרד לא ביטלה. המחיקה סופית: כל נתוני המשרד, ואחריהם הקבצים שלו.</span> : <span className="small muted">בעלת המשרד עוד יכולה לבטל. אי אפשר למחוק לפני תום 30 הימים.</span>}
+        <div><Btn kind="danger" icon={LuTrash2} disabled={!ready || demoOwn} title={demoOwn ? 'בדמו אי אפשר למחוק את משרד הדמו עצמו' : undefined} onClick={() => setOpen(true)}>מחיקת המשרד לצמיתות</Btn></div>
+        {IS_LIVE ? null : <DemoTag>בדמו המשרד רק יוסר מהרשימה</DemoTag>}
+      </div>
+      {open ? (
+        <Modal title={`למחוק את ${o.name}?`} size="narrow" onClose={() => setOpen(false)}
+          foot={<><Btn kind="danger-solid" icon={LuTrash2} disabled={name.trim() !== o.name.trim()} onClick={() => { run(A.adminDeleteOffice, o.id, name); toast(`${o.name} נמחק. המחיקה נרשמה ביומן הביקורת.`, 'info'); setOpen(false); nav('/admin/offices'); }}>מחיקה סופית</Btn><Btn kind="ghost" onClick={() => setOpen(false)}>ביטול</Btn></>}>
+          <div className="stack">
+            <Callout kind="bad">הפעולה לא ניתנת לביטול. הפרויקטים, הלקוחות, הצוות, ההיסטוריה והקבצים של המשרד יימחקו.</Callout>
+            <Field label="הקלידו את שם המשרד לאישור" htmlFor="adm-del" hint={o.name}><Input id="adm-del" value={name} autoComplete="off" onChange={(e: any) => setName(e.target.value)} /></Field>
+          </div>
+        </Modal>
+      ) : null}
+    </Card>
+  );
+}
+
+function OrphanFilesCard() {
+  const { live, toast } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<number | null>(null);
+  const go = async () => {
+    setBusy(true);
+    try { const n = await removeOrphanFiles((live as any).api); setDone(n); toast(n ? `${n} קבצים נמחקו` : 'לא נמצאו קבצים שנשארו', n ? 'ok' : 'info'); }
+    catch { toast('הניקוי נכשל. נסו שוב.', 'bad'); } finally { setBusy(false); }
+  };
+  return (
+    <Card title="קבצים של משרדים שנמחקו" icon={LuFolderX} actions={IS_LIVE ? undefined : <DemoTag>זמין רק בגרסה המחוברת</DemoTag>}>
+      <div className="stack">
+        <span className="small">כשמשרד נמחק, הקבצים שלו נמחקים מיד אחריו. אם משהו נכשל באמצע, הכפתור הזה מוחק את מה שנשאר.</span>
+        <div className="row g12 wrap"><Btn icon={LuFolderX} disabled={!IS_LIVE || busy} onClick={go}>{busy ? 'מנקים…' : 'חיפוש וניקוי'}</Btn>{done !== null ? <span className="small muted">{done ? `נמחקו ${done} קבצים` : 'הכול נקי'}</span> : null}</div>
+      </div>
+    </Card>
   );
 }
 
@@ -183,20 +232,36 @@ function Users() {
 function UserDetail({ id }: { id: string }) {
   const { db, nav, toast, live } = useStore();
   const u = allPlatformUsers(db).find((x: any) => x.id === id);
+  const [mfa, setMfa] = useState(false);
+  const [note, setNote] = useState('');
   if (!u) return <Empty heading="h1" title="המשתמש לא נמצא" />;
   return (
     <div style={{ maxWidth: 820 }}>
       <PageHead crumbs={[{ label: 'משתמשים', to: '/admin/users' }, { label: u.name }]} title={u.name} badge={<StatusBadge s={u.status} />} />
       <div className="grid-2">
         <Card title="פרטים"><KV items={[['מייל', <span className="ltr">{u.email}</span>], ['תפקיד', ROLE_SHORT[u.role as T.Role]], ['משרד', u.officeId ? <button type="button" className="linkish" onClick={() => nav(`/admin/offices/${u.officeId}`)}>{u.office}</button> : u.office], ['פעילות אחרונה', ago(u.lastActive)]]} /></Card>
-        <Card title="פעולות תמיכה" actions={<DemoTag />}>
+        <Card title="פעולות תמיכה" actions={IS_LIVE ? undefined : <DemoTag />}>
           <div className="col g8">
-            <Btn size="sm" onClick={() => toast('קישור לאיפוס סיסמה נרשם ביומן המיילים (לא נשלח)', 'info')}>שליחת קישור לאיפוס סיסמה</Btn>
+            <Btn size="sm" onClick={async () => { if (!IS_LIVE) { toast('קישור לאיפוס סיסמה נרשם ביומן המיילים (לא נשלח)', 'info'); return; } try { await (live as any).api.recover(u.email, (live as any).appUrl); toast(`נשלח קישור לאיפוס סיסמה אל ${u.email}`); } catch { toast('השליחה נכשלה. נסו שוב בעוד כמה דקות.', 'bad'); } }}>שליחת קישור לאיפוס סיסמה</Btn>
+            <Btn size="sm" onClick={() => setMfa(true)}>איפוס אימות דו-שלבי (טלפון אבד)</Btn>
             {IS_LIVE ? <Btn size="sm" kind="danger" disabled title="נעילת חשבון מתבצעת כרגע מלוח הבקרה של Supabase (Authentication → Users)">נעילת חשבון</Btn> : <Btn size="sm" kind="danger" onClick={() => toast('המשתמש סומן לנעילה (הדמיה)', 'info')}>נעילת חשבון</Btn>}
-            <span className="xs muted">בייצור – דרך Supabase Auth Admin, עם רישום ביומן הביקורת.</span>
+            <span className="xs muted">{IS_LIVE ? 'איפוס הסיסמה נשלח במייל של Supabase. איפוס האימות הדו-שלבי נרשם ביומן הביקורת.' : 'בייצור – דרך Supabase Auth Admin, עם רישום ביומן הביקורת.'}</span>
           </div>
         </Card>
       </div>
+      {mfa ? (
+        <Modal title="איפוס אימות דו-שלבי" size="narrow" onClose={() => setMfa(false)}
+          foot={<><Btn kind="danger-solid" disabled={!note.trim()} onClick={async () => {
+            if (!IS_LIVE) { toast('האימות הדו-שלבי אופס (הדמיה)', 'info'); setMfa(false); return; }
+            const ok = await (live as any).enqueue((api: any) => api.rpc('admin_reset_mfa', { p_user: u.id, p_note: note.trim() }), `האימות הדו-שלבי של ${u.name} אופס. אפשר להיכנס עם הסיסמה ולהפעיל מחדש.`);
+            if (ok) setMfa(false);
+          }}>איפוס</Btn><Btn kind="ghost" onClick={() => setMfa(false)}>ביטול</Btn></>}>
+          <div className="stack">
+            <Callout kind="assume">רק אחרי שווידאתם שזו באמת {u.name} (למשל בשיחת טלפון למספר המוכר). אחרי האיפוס מספיקה הסיסמה כדי להיכנס.</Callout>
+            <Field label="איך זוהתה המשתמשת? (נרשם ביומן)" htmlFor="mfa-note"><Input id="mfa-note" value={note} onChange={(e: any) => setNote(e.target.value)} /></Field>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }
@@ -402,6 +467,7 @@ function Retention() {
         { key: 'action', label: 'פעולה בסוף התקופה' },
         { key: 'status', label: 'סטטוס', render: (r: any) => <Badge tone="warn">{r.status}</Badge> },
       ]} /></div>
+      <div className="mt16"><OrphanFilesCard /></div>
     </div>
   );
 }

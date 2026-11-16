@@ -14,6 +14,11 @@ export function friendlyError(e: { message?: string; code?: string; status?: num
   if (m.startsWith('plan_limit:users')) return 'הגעתם למגבלת המשתמשים במסלול. שדרגו כדי להוסיף משתמשים.';
   if (m.startsWith('plan_limit:active_projects')) return 'הגעתם למגבלת הפרויקטים הפעילים במסלול.';
   if (m.startsWith('feature_not_in_plan')) return 'היכולת לא כלולה במסלול הנוכחי.';
+  if (m.includes('office name does not match')) return 'שם המשרד שהוקלד לא תואם. הקלידו אותו בדיוק כמו שהוא מופיע.';
+  if (m.includes('deletion already requested')) return 'כבר נשלחה בקשה למחוק את המשרד.';
+  if (m.includes('no deletion request')) return 'אין בקשת מחיקה פעילה.';
+  if (m.includes('grace period has not ended')) return 'תקופת ההמתנה של 30 הימים עוד לא הסתיימה.';
+  if (m.includes('has not asked to delete')) return 'בעלת המשרד לא ביקשה למחוק אותו.';
   if (m.includes('a comment is required')) return 'יש להוסיף הערה.';
   if (m.includes('already decided')) return 'כבר התקבלה החלטה על הפריט הזה.';
   if (m.includes('invitation expired')) return 'תוקף ההזמנה פג. בקשו מהמשרד הזמנה חדשה.';

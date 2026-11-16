@@ -60,7 +60,7 @@ const result = await esbuild.build({
 const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 const css = fs.readdirSync(path.join(root, 'src/styles')).sort().map((f) => fs.readFileSync(path.join(root, 'src/styles', f), 'utf8')).join('\n');
 
-const head = `<title>ArchiFlow</title>
+const head = `<title>${LIVE ? 'ArchiFlow – ניהול משרד אדריכלות ועיצוב פנים' : 'ArchiFlow'}</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,7 +78,12 @@ if (LIVE) {
   const cfg = TEST ? `window.__AF_CONFIG={url:location.origin,pdfjsModule:location.origin+'/_pdfjs/pdf.min.mjs',pdfjsWorker:location.origin+'/_pdfjs/pdf.worker.min.mjs'};window.__AF_DEBUG=true;` : '';
   const html = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="description" content="ArchiFlow – ניהול פרויקטים למשרדי אדריכלות ועיצוב פנים">
+<meta name="description" content="ArchiFlow – מערכת לניהול משרדי אדריכלות ועיצוב פנים: שלבים ושכר טרחה, שעות ורווחיות, פיקוח עליון, מפרטים ואישורי לקוח, ופורטל לקוח ממותג. בעברית.">
+<link rel="canonical" href="https://archiflow-topaz.vercel.app/">
+<meta property="og:type" content="website"><meta property="og:locale" content="he_IL"><meta property="og:site_name" content="ArchiFlow">
+<meta property="og:title" content="ArchiFlow – כל המשרד במקום אחד"><meta property="og:description" content="ניהול פרויקטים למשרדי אדריכלות ועיצוב פנים, מהסקיצה הראשונה ועד המסירה.">
+<meta property="og:url" content="https://archiflow-topaz.vercel.app/"><meta property="og:image" content="https://archiflow-topaz.vercel.app/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#3D2233">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ArchiFlow">

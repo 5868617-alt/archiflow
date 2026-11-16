@@ -89,6 +89,13 @@ function audit(mobile) {
 }
 
 const totals = {}; const lines = [];
+// A11Y_URL=http://localhost:8787/ audits one page of the live build (e.g. the public home page) instead of the demo routes
+if (process.env.A11Y_URL) {
+  await page.goto(process.env.A11Y_URL); await page.waitForTimeout(1200);
+  const res = await page.evaluate(audit, width < 700);
+  for (const x of res) { totals[x.rule] = (totals[x.rule] || 0) + 1; lines.push(`${process.env.A11Y_URL} · ${x.rule} · ${x.what}`); }
+  console.log([...new Set(lines)].join('\n')); console.log('\nTOTAL', JSON.stringify(totals)); await browser.close(); process.exit(0);
+}
 for (const [user, list] of Object.entries(routes)) {
   for (const r of list) {
     await page.evaluate(([u, path]) => { localStorage.setItem('archiflow.demo.v3', JSON.stringify({ ...(JSON.parse(localStorage.getItem('archiflow.demo.v3') || '{}')), userId: u === 'anon' ? 'u_yoav' : u, path })); }, [user, r]);

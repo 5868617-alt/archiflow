@@ -61,6 +61,32 @@ export class Supa {
     const r = await fetch(`${this.url}/auth/v1/user`, { method: 'PUT', headers: { ...this.baseHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
     if (!r.ok) throw await Supa.err(r);
   }
+  // ------------------------------------------------------------------ two-factor (TOTP, Supabase Auth MFA)
+  /** the session level: 'aal2' after the code was entered */
+  aal(): 'aal1' | 'aal2' {
+    try { const t = this.session?.access_token || ''; const p = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); return p.aal === 'aal2' ? 'aal2' : 'aal1'; } catch { return 'aal1'; }
+  }
+  private async authCall(method: string, path: string, body?: any) {
+    await this.ensureFresh();
+    const r = await fetch(`${this.url}/auth/v1/${path}`, { method, headers: { ...this.baseHeaders(), 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) throw await Supa.err(r);
+    const t = await r.text(); return t ? JSON.parse(t) : null;
+  }
+  async factors(): Promise<{ id: string; status: string; factor_type: string; friendly_name?: string; created_at?: string }[]> {
+    const u = await this.authCall('GET', 'user'); return (u?.factors || []).filter((f: any) => f.factor_type === 'totp');
+  }
+  async enrollTotp(name: string): Promise<{ id: string; qr: string; secret: string; uri: string }> {
+    const d = await this.authCall('POST', 'factors', { factor_type: 'totp', friendly_name: name, issuer: 'ArchiFlow' });
+    return { id: d.id, qr: d.totp?.qr_code || '', secret: d.totp?.secret || '', uri: d.totp?.uri || '' };
+  }
+  /** challenge + verify in one step; on success the session is upgraded to aal2 */
+  async verifyTotp(factorId: string, code: string) {
+    const ch = await this.authCall('POST', `factors/${factorId}/challenge`, {});
+    const d = await this.authCall('POST', `factors/${factorId}/verify`, { challenge_id: ch.id, code: code.replace(/\s/g, '') });
+    if (d?.access_token) this.setSession(this.toSession(d));
+  }
+  async unenroll(factorId: string) { await this.authCall('DELETE', `factors/${factorId}`); await this.ensureFresh(); }
+
   async signOut() {
     try { if (this.session) await fetch(`${this.url}/auth/v1/logout`, { method: 'POST', headers: this.baseHeaders() }); } catch { /* offline: still clear locally */ }
     this.setSession(null);
@@ -132,6 +158,11 @@ export class Supa {
     });
     if (!r.ok) throw await Supa.err(r);
     return path;
+  }
+  async removeFiles(bucket: string, paths: string[]) {
+    await this.ensureFresh();
+    const r = await fetch(`${this.url}/storage/v1/object/${bucket}`, { method: 'DELETE', headers: { ...this.baseHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: paths }) });
+    if (!r.ok) throw await Supa.err(r);
   }
   async signedUrl(bucket: string, path: string, expiresIn = 300, download?: string): Promise<string> {
     await this.ensureFresh();

@@ -304,3 +304,101 @@ export function LiveLinkExpired() {
     </AuthLayout>
   );
 }
+
+/** after the password: the 6-digit code from the authenticator app (two-factor is on for this user) */
+export function LiveMfaChallenge() {
+  const { live } = useStore();
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: any) => {
+    e.preventDefault();
+    const c = code.replace(/\s/g, '');
+    if (!/^\d{6}$/.test(c)) { setErr('הקוד הוא 6 ספרות'); return; }
+    setBusy(true); setErr('');
+    try { await live!.completeMfa(c); } catch (x: any) { setErr(/invalid|expired|code/i.test(x?.message || '') ? 'הקוד לא נכון או שפג תוקפו. נסו את הקוד החדש באפליקציה.' : friendlyError(x)); setCode(''); } finally { setBusy(false); }
+  };
+  return (
+    <AuthLayout title="אימות דו-שלבי" sub="פתחו את אפליקציית האימות בטלפון והקלידו את הקוד של ArchiFlow.">
+      <form className="stack" noValidate onSubmit={submit}>
+        <Field label="קוד בן 6 ספרות" error={err} htmlFor="mfa-code">
+          <Input id="mfa-code" className="ltr t-center mfa-code" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={7} value={code} invalid={err} onChange={(e: any) => setCode(e.target.value.replace(/[^\d\s]/g, ''))} />
+        </Field>
+        <Btn kind="primary" size="lg" block type="submit" icon={LuKeyRound} disabled={busy}>{busy ? <Spin /> : null}{busy ? 'בודקים…' : 'כניסה'}</Btn>
+        <div className="small muted">אין גישה לטלפון? פנו לתמיכה של ArchiFlow לאיפוס האימות הדו-שלבי, אחרי זיהוי.</div>
+        <button type="button" className="linkish small" onClick={() => live!.signOut()}>יציאה וכניסה עם חשבון אחר</button>
+      </form>
+    </AuthLayout>
+  );
+}
+
+/** Profile → turn two-factor on or off (TOTP, any authenticator app) */
+export function TwoFactorCard() {
+  const { live, toast } = useStore();
+  const [factors, setFactors] = useState<{ id: string; status: string; friendly_name?: string; created_at?: string }[] | null>(null);
+  const [enroll, setEnroll] = useState<null | { id: string; qr: string; secret: string }>(null);
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const refresh = async () => { try { setFactors(await live!.api.factors()); } catch { setFactors([]); } };
+  useEffect(() => { refresh(); }, []); // eslint-disable-line
+  const on = (factors || []).find((f) => f.status === 'verified');
+  const start = async () => {
+    setBusy(true); setErr('');
+    try {
+      // a previous unfinished attempt would block a new one with the same name
+      for (const f of factors || []) if (f.status !== 'verified') await live!.api.unenroll(f.id).catch(() => undefined);
+      const e = await live!.api.enrollTotp('ArchiFlow ' + new Date().toISOString().slice(0, 10));
+      setEnroll(e); setCode('');
+    } catch (x: any) { setErr(friendlyError(x)); } finally { setBusy(false); }
+  };
+  const confirm = async () => {
+    const c = code.replace(/\s/g, '');
+    if (!/^\d{6}$/.test(c)) { setErr('הקוד הוא 6 ספרות'); return; }
+    setBusy(true); setErr('');
+    try { await live!.api.verifyTotp(enroll!.id, c); setEnroll(null); await refresh(); toast('האימות הדו-שלבי הופעל. מעכשיו נבקש קוד בכל כניסה.'); }
+    catch (x: any) { setErr(/invalid|expired|code/i.test(x?.message || '') ? 'הקוד לא נכון. ודאו שהשעה בטלפון מעודכנת ונסו את הקוד החדש.' : friendlyError(x)); }
+    finally { setBusy(false); }
+  };
+  const off = async () => {
+    if (!on) return;
+    setBusy(true); setErr('');
+    try { await live!.api.unenroll(on.id); await refresh(); toast('האימות הדו-שלבי כובה.', 'info'); }
+    catch (x: any) { setErr(friendlyError(x)); } finally { setBusy(false); }
+  };
+  return (
+    <div className="card"><div className="card-head"><h2>אימות דו-שלבי</h2></div><div className="card-body stack">
+      {factors === null ? <span className="small muted">בודקים…</span> : on ? (
+        <>
+          <Callout kind="ok" title="פעיל">בכל כניסה נבקש גם קוד מאפליקציית האימות. גם המסד עצמו לא נותן גישה לנתוני המשרד בלי הקוד.</Callout>
+          <div><Btn kind="danger" disabled={busy} onClick={off}>כיבוי האימות הדו-שלבי</Btn></div>
+        </>
+      ) : enroll ? (
+        <div className="stack">
+          <ol className="small" style={{ margin: 0, paddingInlineStart: 20, lineHeight: 1.9 }}>
+            <li>פתחו אפליקציית אימות בטלפון (Google Authenticator, Microsoft Authenticator, 1Password וכדומה).</li>
+            <li>סרקו את הקוד, או הקלידו את המפתח הידני.</li>
+            <li>הקלידו כאן את 6 הספרות שמופיעות באפליקציה.</li>
+          </ol>
+          <div className="mfa-enroll">
+            {enroll.qr ? <img src={enroll.qr} alt="קוד QR להוספת ArchiFlow לאפליקציית האימות" width={180} height={180} /> : null}
+            <div className="col g8" style={{ minWidth: 0 }}>
+              <span className="xs muted">מפתח ידני</span>
+              <code className="ltr mfa-secret">{enroll.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
+            </div>
+          </div>
+          <Field label="קוד מהאפליקציה" error={err} htmlFor="mfa-new">
+            <Input id="mfa-new" className="ltr t-center mfa-code" inputMode="numeric" autoComplete="one-time-code" maxLength={7} value={code} invalid={err} onChange={(e: any) => setCode(e.target.value.replace(/[^\d\s]/g, ''))} style={{ maxWidth: 220 }} />
+          </Field>
+          <div className="row g8 wrap"><Btn kind="primary" disabled={busy} onClick={confirm}>הפעלה</Btn><Btn kind="ghost" disabled={busy} onClick={() => { live!.api.unenroll(enroll.id).catch(() => undefined); setEnroll(null); setErr(''); }}>ביטול</Btn></div>
+        </div>
+      ) : (
+        <>
+          <p className="soft" style={{ margin: 0 }}>שכבת הגנה נוספת: גם מי שגילה את הסיסמה לא ייכנס בלי הטלפון שלכם. מומלץ במיוחד לבעלי משרד.</p>
+          {err ? <Callout kind="bad">{err}</Callout> : null}
+          <div><Btn kind="primary" icon={LuKeyRound} disabled={busy} onClick={start}>הפעלת אימות דו-שלבי</Btn></div>
+        </>
+      )}
+    </div></div>
+  );
+}

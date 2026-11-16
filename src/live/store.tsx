@@ -12,7 +12,9 @@ import { LIVE_CONFIG } from './config';
 
 export interface LiveContext { key: string; kind: 'office' | 'client' | 'admin'; officeId: string | null; officeName: string; role: T.Role; clientId?: string; contactId?: string }
 export interface LiveApi {
-  api: Supa; session: Session | null; status: 'boot' | 'anon' | 'loading' | 'ready' | 'no-context' | 'error'; error?: string;
+  api: Supa; session: Session | null; status: 'boot' | 'anon' | 'loading' | 'mfa' | 'ready' | 'no-context' | 'error'; error?: string;
+  /** two-factor: the verified factor waiting for its code (status 'mfa'), and how to enter it */
+  mfaFactorId: string | null; completeMfa: (code: string) => Promise<void>;
   contexts: LiveContext[]; current: LiveContext | null; switchContext: (key: string) => void;
   signOut: () => Promise<void>; reload: () => Promise<void>; afterAuth: () => Promise<void>; saving: boolean;
   landing: null | { kind: 'verified' | 'expired'; name?: string; email?: string }; clearLanding: () => void;
@@ -25,7 +27,7 @@ export interface LiveApi {
 
 const ACTION_NAMES = new Map<any, string>(Object.entries(A).map(([k, f]) => [f, k]));
 const CTX_KEY = 'archiflow.context.v1';
-const PUBLIC = new Set(['login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing', 'accessibility']);
+const PUBLIC = new Set(['', 'home', 'login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing', 'accessibility']);
 
 function readPathFromUrl(): string | null {
   try {
@@ -50,9 +52,10 @@ export function LiveStoreProvider({ children }: { children: any }) {
   const [session, setSession] = useState<Session | null>(api.session);
   const [status, setStatus] = useState<LiveApi['status']>('boot');
   const [error, setError] = useState<string>();
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [contexts, setContexts] = useState<LiveContext[]>([]);
   const [ctxKey, setCtxKey] = useState<string | null>(() => { try { return localStorage.getItem(CTX_KEY); } catch { return null; } });
-  const [path, setPath] = useState<string>(() => readPathFromUrl() || '/login');
+  const [path, setPath] = useState<string>(() => readPathFromUrl() || '/');
   const [history, setHistory] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   // what the user arrived from an e-mail link: shown as a full landing page before entering the app
@@ -99,6 +102,8 @@ export function LiveStoreProvider({ children }: { children: any }) {
       const rows: any[] = (await api.rpc('admin_offices_overview')) || [];
       data.platformOffices = rows.map((o) => ({ id: o.id, name: o.name, city: o.city || '', ownerName: o.owner_name || '—', ownerEmail: o.owner_email || '', planId: o.plan_id || 'starter', status: E.sub.ui(o.status) as any, users: Number(o.users), projects: Number(o.projects),
         storageGb: Math.round((Number(o.storage_bytes) / 1073741824) * 10) / 10, createdAt: day(o.created_at), lastActive: stamp(o.last_activity) || stamp(o.created_at), mrr: Number(o.mrr) || 0 }));
+      const dels: any[] = (await api.rpc('admin_deletion_requests').catch(() => [])) || [];
+      for (const d of dels) { const po = data.platformOffices.find((o: any) => o.id === d.id); if (po) { po.deletionRequestedAt = day(d.requested_at); po.deletionDueAt = day(d.due_at); } }
       data.officeSubscription = { ...data.officeSubscription, status: 'פעיל' };
     }
     dbRef.current = data; setDb(data);
@@ -118,6 +123,13 @@ export function LiveStoreProvider({ children }: { children: any }) {
     if (!api.session) { setStatus('anon'); setContexts([]); const seg = path.split(/[/?]/)[1] || ''; if (!PUBLIC.has(seg)) go('/login', true); return; }
     setStatus('loading');
     try {
+      // two-factor: a password-only session of a user with a verified factor must enter the code first
+      // (the database also refuses such a session any office access – private.mfa_ok)
+      if (api.aal() !== 'aal2') {
+        const v = (await api.factors().catch(() => [])).find((f) => f.status === 'verified');
+        if (v) { setMfaFactorId(v.id); setStatus('mfa'); return; }
+      }
+      setMfaFactorId(null);
       const r = await resolveContexts();
       if (!r) { await api.signOut(); setStatus('anon'); go('/login', true); return; }
       setContexts(r.list);
@@ -206,6 +218,8 @@ export function LiveStoreProvider({ children }: { children: any }) {
     api, session, status, error, contexts, current, switchContext, signOut, reload, saving,
     landing, clearLanding: () => setLanding(null),
     afterAuth: () => boot({ landing: true }),
+    mfaFactorId,
+    completeMfa: async (code: string) => { if (!mfaFactorId) return; await api.verifyTotp(mfaFactorId, code); await boot({ landing: true }); },
     upload: async (bucket, projectId, file) => {
       const office = current?.officeId; if (!office) throw { message: 'no office' };
       const path = `${office}/${projectId || 'office'}/${crypto.randomUUID()}/${safeName(file.name)}`;

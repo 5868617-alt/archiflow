@@ -21,6 +21,15 @@ const SERVER_LOGGED = new Set(['setProjectStatus', 'requestApproval', 'decideApp
 /** Actions that only exist to simulate something in the demo – never sent to the database. */
 export const DEMO_ONLY = new Set(['simulateSubState', 'retryInvoice', 'applyPendingDowngrade', 'acceptInvite', 'finishProcessing']);
 
+/** Files of offices that no longer exist (Super Admin only). Returns how many were removed. */
+export async function removeOrphanFiles(api: any): Promise<number> {
+  const rows: { bucket: string; name: string }[] = (await api.rpc('admin_orphan_files')) || [];
+  const byBucket: Record<string, string[]> = {};
+  for (const r of rows) (byBucket[r.bucket] ||= []).push(r.name);
+  for (const [bucket, names] of Object.entries(byBucket)) for (let i = 0; i < names.length; i += 100) await api.removeFiles(bucket, names.slice(i, i + 100));
+  return rows.length;
+}
+
 export async function push(c: PushCtx, before: any, after: any): Promise<void> {
   const { api, officeId, me } = c;
   const ops: Op[] = [];
@@ -46,6 +55,16 @@ export async function push(c: PushCtx, before: any, after: any): Promise<void> {
     case 'setBranding': {
       const b = after.branding || {};
       await api.rpc('set_office_branding', { p_office: officeId, p_color: b.color || null, p_logo: b.logo || null });
+      return;
+    }
+    case 'recordExport': await api.rpc('record_data_export', { p_office: officeId, p_rows: c.args[0] }); return;
+    case 'requestOfficeDeletion': await api.rpc('request_office_deletion', { p_office: officeId, p_confirm_name: c.args[0] }); return;
+    case 'cancelOfficeDeletion': await api.rpc('cancel_office_deletion', { p_office: officeId }); return;
+    case 'adminDeleteOffice': {
+      const [oid, name] = c.args;
+      await api.rpc('admin_delete_office', { p_office: oid, p_confirm_name: name });
+      // Storage files cannot be deleted from SQL: remove what the office left behind through the Storage API
+      await removeOrphanFiles(api).catch(() => undefined);
       return;
     }
     case 'setOfficeStatus': { const [oid, status, note] = c.args; await api.rpc('admin_set_subscription_status', { p_office: oid, p_status: E.sub.db(status), p_note: note || 'שינוי ידני מקונסולת הניהול' }); return; }

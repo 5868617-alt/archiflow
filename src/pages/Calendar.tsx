@@ -1,6 +1,7 @@
 import { IS_LIVE } from '../data/dates';
 import { useState, useEffect } from 'react';
-import { LuChevronRight, LuChevronLeft, LuPlus, LuMapPin, LuUsers, LuClock, LuPencil, LuListChecks, LuSend, LuCalendarX, LuPlane, LuCalendarCheck, LuRefreshCw, LuTriangleAlert } from 'react-icons/lu';
+import { LuChevronRight, LuChevronLeft, LuPlus, LuMapPin, LuUsers, LuClock, LuPencil, LuListChecks, LuSend, LuCalendarX, LuPlane, LuCalendarCheck, LuRefreshCw, LuTriangleAlert , LuPrinter } from 'react-icons/lu';
+import { PrintModal, MeetingSummaryDoc } from './PrintDocs';
 import { useStore } from '../data/store';
 import { visibleProjects, visibleProjectIds, projectOf, clientOf, userName, A, uid, byId, supplierOf, simulateEmail, contactOf, isOverdue } from '../data/api';
 import type * as T from '../data/types';
@@ -228,6 +229,7 @@ export function MeetingDetail({ id }: { id: string }) {
   const [edit, setEdit] = useState(false);
   const [summary, setSummary] = useState(m?.summary || '');
   const [task, setTask] = useState(false);
+  const [pdf, setPdf] = useState(false);
   useEffect(() => setSummary(m?.summary || ''), [m?.id]);
   if (!m || (m.projectId && !visibleProjectIds(db, me).has(m.projectId))) return <Empty heading="h1" title="הפגישה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/calendar')}>ליומן</Btn>} />;
   const followUps = db.tasks.filter((t) => m.followUpTaskIds.includes(t.id) || (t.source?.kind === 'meeting' && t.source.id === m.id));
@@ -236,7 +238,7 @@ export function MeetingDetail({ id }: { id: string }) {
     <div>
       <PageHead crumbs={[{ label: 'יומן ופגישות', to: '/calendar' }, { label: m.title }]} title={m.title} badge={<><Badge tone={m.kind === 'site' ? 'warn' : m.kind === 'client' ? 'info' : m.kind === 'supplier' ? 'violet' : ''}>{KIND_LABEL[m.kind]}</Badge><StatusBadge s={m.status} /></>}
         sub={<span className="row wrap g12 small"><span className="row g4"><LuClock aria-hidden style={{ width: 14 }} />{relDay(m.date)} · {date(m.date)} · <span className="num ltr">{m.start}–{m.end}</span></span><span className="row g4"><LuMapPin aria-hidden style={{ width: 14 }} />{m.location || '—'}</span></span>}
-        actions={<><Btn icon={LuPencil} onClick={() => setEdit(true)}>עריכה</Btn>{m.status === 'מתוכננת' ? <><Btn icon={LuCalendarCheck} onClick={() => { run(A.saveMeeting, { ...m, status: 'התקיימה' }, false); toast('סומנה כהתקיימה'); }}>סימון כהתקיימה</Btn><Btn kind="danger" icon={LuCalendarX} onClick={() => { run(A.saveMeeting, { ...m, status: 'בוטלה' }, false); toast('הפגישה בוטלה'); }}>ביטול פגישה</Btn></> : null}</>} />
+        actions={<><Btn icon={LuPencil} onClick={() => setEdit(true)}>עריכה</Btn>{m.summary ? <Btn icon={LuPrinter} onClick={() => setPdf(true)}>סיכום ב-PDF</Btn> : null}{m.status === 'מתוכננת' ? <><Btn icon={LuCalendarCheck} onClick={() => { run(A.saveMeeting, { ...m, status: 'התקיימה' }, false); toast('סומנה כהתקיימה'); }}>סימון כהתקיימה</Btn><Btn kind="danger" icon={LuCalendarX} onClick={() => { run(A.saveMeeting, { ...m, status: 'בוטלה' }, false); toast('הפגישה בוטלה'); }}>ביטול פגישה</Btn></> : null}</>} />
       <div className="grid-main-side">
         <div className="stack-lg" style={{ minWidth: 0 }}>
           <Card title="סדר יום">{m.agenda.length ? <ol style={{ margin: 0, paddingInlineStart: 20 }}>{m.agenda.map((a, i) => <li key={i} style={{ marginBottom: 6 }}>{a}</li>)}</ol> : <span className="small muted">לא הוגדר סדר יום.</span>}</Card>
@@ -262,6 +264,7 @@ export function MeetingDetail({ id }: { id: string }) {
           </Card>
         </div>
       </div>
+      {pdf ? <PrintModal title={`סיכום פגישה – ${m.title}`} onClose={() => setPdf(false)}><MeetingSummaryDoc m={m} /></PrintModal> : null}
       {edit ? <MeetingForm meeting={m} onClose={() => setEdit(false)} /> : null}
       {task ? <TaskForm defaults={{ projectId: m.projectId, source: { kind: 'meeting', id: m.id }, title: '' }} onClose={() => setTask(false)} /> : null}
     </div>

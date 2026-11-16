@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { LuPlus, LuPaperclip, LuPencil, LuTrash2, LuTriangleAlert, LuWallet, LuCoins, LuSend, LuCheck, LuFileSpreadsheet, LuChartBar } from 'react-icons/lu';
+import { LuPlus, LuPaperclip, LuPencil, LuTrash2, LuTriangleAlert, LuWallet, LuCoins, LuSend, LuCheck, LuFileSpreadsheet, LuChartBar , LuPrinter } from 'react-icons/lu';
+import { PrintModal, FeeRequestDoc } from './PrintDocs';
 import { useStore } from '../data/store';
 import { visibleProjects, projectOf, supplierOf, A, uid, byId, projectFinance, budgetHealth, canSeeFinance, poTotal, clientOf, simulateEmail } from '../data/api';
 import { EXPENSE_CATEGORIES } from '../data/seed';
@@ -298,6 +299,7 @@ export function FeesPage() {
 function FeeTable({ rows, hideProject }: any) {
   const { db, run, toast, live } = useStore();
   const act = useAct();
+  const [pdf, setPdf] = useState<T.FeeMilestone | null>(null);
   return (
     <div className="card">
       <DataTable rows={rows} empty={<Empty title="אין אבני דרך בסינון הזה" />} columns={[
@@ -310,11 +312,13 @@ function FeeTable({ rows, hideProject }: any) {
         { key: 'act', label: '', sortable: false, render: (f: T.FeeMilestone) => (
           <div className="row g4">
             {f.status === 'עתידי' || f.status === 'באיחור' ? <Btn size="xs" icon={LuSend} onClick={() => { if (live) { act((api) => api.rpc('send_fee_request', { p_fee: f.id }), 'דרישת התשלום נשלחה ללקוח (חשבונית לא מופקת מכאן)'); return; } run(A.setFeeStatus, f.id, 'נשלחה דרישה'); run((d: any) => { const p = projectOf(d, f.projectId)!; const c = clientOf(d, p.clientId)!.contacts[0]; simulateEmail(d, c.email, `דרישת תשלום: ${f.title} – ${p.name}`, 'fee_request', `/projects/${p.id}/fees`); }); toast('דרישת תשלום נרשמה (מדומה – לא הופקה חשבונית)', 'info'); }}>דרישת תשלום</Btn> : null}
+            {f.status !== 'שולם' ? <Btn size="xs" kind="ghost" icon={LuPrinter} aria-label={`דרישת תשלום ב-PDF – ${f.title}`} title="דרישת תשלום ב-PDF" onClick={() => setPdf(f)} /> : null}
             {f.status !== 'שולם' ? <Btn size="xs" kind="ok" icon={LuCheck} onClick={() => { run(A.setFeeStatus, f.id, 'שולם'); toast('סומן כשולם'); }}>סימון כשולם</Btn> : null}
             {f.status === 'עתידי' ? <Btn size="xs" kind="ghost" icon={LuTrash2} aria-label="מחיקה" onClick={() => { run(A.deleteFeeMilestone, f.id); toast('אבן הדרך נמחקה'); }} /> : null}
           </div>
         ) },
       ]} />
+      {pdf ? <PrintModal title={`דרישת תשלום – ${pdf.title}`} onClose={() => setPdf(null)}><FeeRequestDoc f={pdf} /></PrintModal> : null}
     </div>
   );
 }

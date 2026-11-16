@@ -134,7 +134,7 @@ export function PublicShell({ children, plain }: any) {
       <DemoStrip />
       {!plain ? (
         <header className="public-top">
-          <button type="button" className="brand" onClick={() => nav('/pricing')} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)' }}><span style={{ color: 'var(--ink)' }}><Logo /></span><span className="ltr">Archi<span>Flow</span></span></button>
+          <button type="button" className="brand" onClick={() => nav(live ? '/' : '/pricing')} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)' }}><span style={{ color: 'var(--ink)' }}><Logo /></span><span className="ltr">Archi<span>Flow</span></span></button>
           <div className="grow" />
           <button type="button" className="btn ghost" onClick={() => nav('/pricing')}>תמחור</button>
           <button type="button" className="btn ghost" onClick={() => nav('/help')}>מרכז עזרה</button>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /demo
+Sitemap: https://archiflow-topaz.vercel.app/sitemap.xml

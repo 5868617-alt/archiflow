@@ -1,6 +1,7 @@
 import { IS_LIVE } from '../data/dates';
 import { useState, useEffect } from 'react';
-import { LuPlus, LuPhone, LuMail, LuMapPin, LuStar, LuSend, LuPackageCheck, LuReceipt, LuPencil, LuTrash2, LuX, LuTruck, LuShoppingCart } from 'react-icons/lu';
+import { LuPlus, LuPhone, LuMail, LuMapPin, LuStar, LuSend, LuPackageCheck, LuReceipt, LuPencil, LuTrash2, LuX, LuTruck, LuShoppingCart , LuPrinter } from 'react-icons/lu';
+import { PrintModal, PurchaseOrderDoc } from './PrintDocs';
 import { useStore } from '../data/store';
 import { visibleProjects, visibleProjectIds, projectOf, supplierOf, userName, A, uid, byId, poTotal, canSeeFinance, VAT } from '../data/api';
 import type * as T from '../data/types';
@@ -250,6 +251,7 @@ export function PODetail({ id }: { id: string }) {
   const [edit, setEdit] = useState(false);
   const [expense, setExpense] = useState(false);
   const [cancel, setCancel] = useState(false);
+  const [pdf, setPdf] = useState(false);
   if (!po || !visibleProjectIds(db, me).has(po.projectId)) return <Empty heading="h1" title="ההזמנה לא נמצאה או שאין גישה" action={<Btn onClick={() => nav('/procurement')}>לרשימה</Btn>} />;
   const sup = supplierOf(db, po.supplierId)!;
   const total = poTotal(po); const exps = db.expenses.filter((e) => e.poId === id); const paid = exps.reduce((a, e) => a + e.amount, 0);
@@ -262,6 +264,7 @@ export function PODetail({ id }: { id: string }) {
       <PageHead crumbs={[{ label: 'הזמנות רכש', to: '/procurement' }, { label: po.number }]} title={`הזמנת רכש ${po.number}`} badge={<StatusBadge s={po.status} />} sub={<span>{sup.name} · <ProjectLink id={po.projectId} /></span>}
         actions={<>
           {po.status === 'טיוטה' ? <Btn kind="primary" icon={LuSend} onClick={() => { run(A.setPOStatus, id, 'נשלחה לספק'); toast(IS_LIVE ? `ההזמנה נשלחה ל${sup.name} (המייל בתור לשליחה)` : `ההזמנה סומנה כנשלחה ל${sup.name} (מייל + PDF מדומים – לא נשלחו)`, 'info'); }}>שליחה לספק</Btn> : next ? <Btn kind="primary" icon={LuPackageCheck} onClick={() => { run(A.setPOStatus, id, next); toast(`הסטטוס עודכן ל"${next}"`); }}>קידום ל"{next}"</Btn> : null}
+          <Btn icon={LuPrinter} onClick={() => setPdf(true)}>PDF</Btn>
           {fin ? <Btn icon={LuReceipt} onClick={() => setExpense(true)}>רישום הוצאה</Btn> : null}
           {po.status !== 'סופקה' && po.status !== 'בוטלה' ? <><Btn icon={LuPencil} onClick={() => setEdit(true)}>עריכה</Btn><Btn kind="danger" onClick={() => setCancel(true)}>ביטול הזמנה</Btn></> : null}
         </>} />
@@ -297,9 +300,10 @@ export function PODetail({ id }: { id: string }) {
           <Card title="פרטים">
             <KV items={[['ספק', <button type="button" className="linkish" onClick={() => nav(`/suppliers/${sup.id}`)}>{sup.name}</button>], ['איש קשר', `${sup.contact} · ${sup.phone}`], ['נוצרה', `${date(po.createdAt)} · ${userName(db, po.createdBy)}`], ['אספקה צפויה', date(po.expectedDelivery)], ['תשלום', po.paidBy], ['תנאי תשלום', sup.paymentTerms], ['הערות', po.notes || '—']]} />
           </Card>
-          <Callout kind="assume">{IS_LIVE ? 'שליחה לספק מכניסה מייל עם פרטי ההזמנה לתור השליחה. קובץ PDF של ההזמנה עדיין לא מופק. אין לספק חשבון במערכת.' : 'שליחת ההזמנה לספק מדומה: בייצור תופק הזמנה ב-PDF ותישלח במייל דרך Resend. אין לספק חשבון במערכת.'}</Callout>
+          <Callout kind="assume">{IS_LIVE ? 'שליחה לספק מכניסה מייל עם פרטי ההזמנה לתור השליחה. את ההזמנה כ-PDF ממותג מורידים בכפתור PDF ומצרפים. אין לספק חשבון במערכת.' : 'שליחת ההזמנה לספק מדומה (המייל לא נשלח). את ההזמנה כ-PDF ממותג אפשר להפיק כבר עכשיו בכפתור PDF. אין לספק חשבון במערכת.'}</Callout>
         </div>
       </div>
+      {pdf ? <PrintModal title={`הזמנת רכש ${po.number}`} onClose={() => setPdf(false)}><PurchaseOrderDoc po={po} prices={fin} /></PrintModal> : null}
       {edit ? <POForm po={po} onClose={() => setEdit(false)} /> : null}
       {expense ? <ExpenseForm defaults={{ projectId: po.projectId, supplierId: po.supplierId, poId: po.id, description: `תשלום – ${po.number}`, amount: Math.max(0, total - paid), paidBy: po.paidBy, category: exps[0]?.category }} onClose={() => setExpense(false)} /> : null}
       {cancel ? <Confirm title="ביטול הזמנת רכש" danger confirmLabel="ביטול ההזמנה" onClose={() => setCancel(false)} onConfirm={() => { run(A.setPOStatus, id, 'בוטלה'); toast('ההזמנה בוטלה'); }}>לבטל את {po.number}? ההזמנה תישאר בהיסטוריה בסטטוס "בוטלה".</Confirm> : null}

@@ -1,6 +1,6 @@
 // End-to-end write flows on the live site, verified in the database. Run after tests/e2e/restart.sh.
 import fs from 'fs';
-import { chromium, newPage, login, go, settle, BASE, EMAIL } from './lib.mjs';
+import { chromium, newPage, login, go, settle, BASE, EMAIL, PW } from './lib.mjs';
 const results = [];
 const log = (ok, msg, extra = '') => { results.push(ok); console.log((ok ? '✓ ' : '✗ ') + msg + (extra && !ok ? '  → ' + extra : '')); };
 const q = async (sql) => { const r = await (await fetch(BASE + '/__test/sql', { method: 'POST', body: sql })).json(); if (r.code) console.log('SQL ERR', r.err); return r.out; };
@@ -463,10 +463,81 @@ await ron.locator('button:has-text("העברה ל\\"חוב פתוח\\"")').click
 await ron.click('.modal-foot .btn.primary');
 await waitWrites(ron);
 log((await q("select status from public.office_subscriptions where office_id = 'a0000000-0000-4000-8000-000000000002'")) === 'past_due', 'super admin changes an office subscription status', await badToasts(ron));
-const errsC = ron.errors.filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
+
+// ---------------------------------------------------------------- the office's data: export, deletion request, final delete
+const O2 = 'a0000000-0000-4000-8000-000000000002';
+const av = await newPage(browser);
+await login(av, 'avital');
+await go(av, '/settings/data');
+const [dl] = await Promise.all([av.waitForEvent('download'), av.locator('button:has-text("הורדת הנתונים")').click()]);
+const zipPath = '/tmp/claude-0/export-e2e.zip'; await dl.saveAs(zipPath);
+const zbuf = fs.readFileSync(zipPath);
+log(zbuf.readUInt32LE(0) === 0x04034b50 && zbuf.includes(Buffer.from('data.json')) && zbuf.includes(Buffer.from('סטודיו קו ישר')), 'owner downloads a ZIP with the office data');
+await waitWrites(av);
+log((await q(`select count(*) from public.audit_log where action = 'data_export' and office_id = '${O2}'`)) === '1', 'the export is written to the audit log', await badToasts(av));
+await av.locator('button:has-text("בקשה למחיקת המשרד")').click();
+await av.fill('#del-name', 'סטודיו קו ישר');
+await av.locator('.modal-foot button:has-text("מחיקה בעוד 30 ימים")').click();
+await waitWrites(av);
+log((await q(`select (deletion_due_at::date - now()::date) from public.offices where id = '${O2}'`)) === '30', 'owner asks to delete the office (30 days)', await badToasts(av));
+log(await av.isVisible('text=המשרד מתוכנן למחיקה'), 'the screen shows the scheduled deletion');
+await av.locator('button:has-text("ביטול המחיקה")').click();
+await waitWrites(av);
+log((await q(`select deletion_requested_at is null from public.offices where id = '${O2}'`)) === 't', 'owner cancels the deletion', await badToasts(av));
+await av.locator('button:has-text("בקשה למחיקת המשרד")').click();
+await av.fill('#del-name', 'סטודיו קו ישר');
+await av.locator('.modal-foot button:has-text("מחיקה בעוד 30 ימים")').click();
+await waitWrites(av);
+const errsD = av.errors.filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
+await av.context().close();
+// the grace period passes; a file of that office is waiting in storage
+await q(`begin; select set_config('archiflow.rpc', 'on', true); update public.offices set deletion_due_at = now() - interval '1 day' where id = '${O2}'; commit;`);
+log((await q(`select deletion_due_at < now() from public.offices where id = '${O2}'`)) === 't', 'test setup: the grace period has passed');
+fs.mkdirSync(new URL(`./.storage/documents/${O2}/office/d9/`, import.meta.url), { recursive: true });
+fs.writeFileSync(new URL(`./.storage/documents/${O2}/office/d9/old.pdf`, import.meta.url), pdfBytes);
+await q(`insert into storage.objects (bucket_id, name, metadata) values ('documents', '${O2}/office/d9/old.pdf', '{"size": 10, "mimetype": "application/pdf"}')`);
+await ron.reload(); await settle(ron); await go(ron, '/admin');
+log(await ron.isVisible('text=בקשת מחיקה'), 'Super Admin sees the deletion request on the overview');
+await go(ron, `/admin/offices/${O2}`);
+await ron.locator('button:has-text("מחיקת המשרד לצמיתות")').click();
+await ron.fill('#adm-del', 'סטודיו קו ישר');
+await ron.locator('.modal-foot button:has-text("מחיקה סופית")').click();
+await waitWrites(ron);
+log((await q(`select count(*) from public.offices where id = '${O2}'`)) === '0' && (await q(`select count(*) from public.projects where office_id = '${O2}'`)) === '0', 'Super Admin deletes the office after the grace period', await badToasts(ron));
+log((await q(`select count(*) from storage.objects where name like '${O2}/%'`)) === '0' && !fs.existsSync(new URL(`./.storage/documents/${O2}/office/d9/old.pdf`, import.meta.url)), 'the office files are removed too');
+log((await q(`select count(*) from public.audit_log where action = 'office_deleted' and record_id = '${O2}'`)) === '1', 'the deletion stays in the audit log');
+const errsC = [...ron.errors, ...errsD].filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource/.test(e));
 await ron.context().close();
 
-const errs = [...errsA, ...errsB, ...errsC];
+// ---------------------------------------------------------------- two-factor sign-in (TOTP)
+const YOAV = '11111111-0000-4000-8000-000000000002';
+const code = async (fid) => (await (await fetch(`${BASE}/__test/totp?factor=${fid}`)).json()).code;
+const mf = await newPage(browser);
+await login(mf, 'yoav');
+await go(mf, '/profile');
+await mf.locator('button:has-text("הפעלת אימות דו-שלבי")').click();
+await mf.waitForSelector('.mfa-secret');
+const fid = await q(`select id from auth.mfa_factors where user_id = '${YOAV}' and status = 'unverified'`);
+await mf.fill('#mfa-new', '000000'); await mf.locator('button:has-text("הפעלה")').click(); await mf.waitForTimeout(500);
+log(await mf.isVisible('text=הקוד לא נכון'), 'a wrong code does not turn two-factor on');
+await mf.fill('#mfa-new', await code(fid)); await mf.locator('button:has-text("הפעלה")').click(); await mf.waitForTimeout(800);
+log((await q(`select status from auth.mfa_factors where id = '${fid}'`)) === 'verified', 'two-factor turned on from the profile', await badToasts(mf));
+await mf.context().close();
+const mf2 = await newPage(browser);
+await mf2.goto(BASE + '/#/login'); await mf2.fill('#lg-e', EMAIL.yoav); await mf2.fill('#lg-p', PW); await mf2.click('button[type=submit]'); await mf2.waitForTimeout(1200);
+log(await mf2.isVisible('#mfa-code'), 'after the password, the code is asked');
+log(!(await mf2.evaluate(() => document.body.innerText.includes('פרויקטים'))), 'no office data before the code');
+await mf2.fill('#mfa-code', '123456'); await mf2.click('button[type=submit]'); await mf2.waitForTimeout(600);
+log(await mf2.isVisible('text=הקוד לא נכון'), 'a wrong code is rejected at sign-in');
+await mf2.fill('#mfa-code', await code(fid)); await mf2.click('button[type=submit]'); await mf2.waitForTimeout(1500); await settle(mf2);
+log(mf2.url().includes('/dashboard'), 'the right code opens the office');
+await go(mf2, '/profile');
+await mf2.locator('button:has-text("כיבוי האימות הדו-שלבי")').click(); await mf2.waitForTimeout(800);
+log((await q(`select count(*) from auth.mfa_factors where user_id = '${YOAV}'`)) === '0', 'two-factor turned off', await badToasts(mf2));
+const errsE = [...mf2.errors].filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource|401|403|422/.test(e));
+await mf2.context().close();
+
+const errs = [...errsA, ...errsB, ...errsC, ...errsE];
 console.log(errs.length ? 'PAGE ERRORS:\n' + errs.join('\n') : 'no page errors');
 console.log(`${results.filter(Boolean).length} passed, ${results.filter((x) => !x).length} failed`);
 await browser.close();

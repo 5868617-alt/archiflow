@@ -190,7 +190,35 @@ await page.click('text=שמירת הצבע');
 await page.waitForTimeout(150);
 log((await getDb()).db.branding.color === '#1F3A5F', 'brand color saved');
 
+// 11b printable documents: purchase order, meeting summary, fee request (only the document is printed)
+const printed = async () => { await page.emulateMedia({ media: 'print' }); const r = await page.evaluate(() => { const el = document.querySelector('.print-root'); const others = [...document.body.children].filter((c) => c !== el && getComputedStyle(c).display !== 'none').length; return el ? { text: el.innerText, top: el.getBoundingClientRect().top, others } : null; }); await page.emulateMedia({ media: 'screen' }); return r; };
+await go('/procurement/po_1', 'u_yoav'); await page.getByRole('button', { name: 'PDF', exact: true }).click(); await page.waitForTimeout(200);
+let pr = await printed(); log(!!pr && pr.text.includes('הזמנת רכש') && pr.text.includes('PO-2026-0112') && pr.text.includes('סה״כ לתשלום') && pr.top === 0 && pr.others === 0, 'purchase order prints alone, with totals');
+await go('/meetings/mt_9'); await page.getByRole('button', { name: 'סיכום ב-PDF' }).click(); await page.waitForTimeout(200);
+pr = await printed(); log(!!pr && pr.text.includes('סיכום פגישה') && pr.text.includes('מה סוכם'), 'meeting summary prints');
+await go('/fees', 'u_michal'); await page.locator('button[title="דרישת תשלום ב-PDF"]').first().click(); await page.waitForTimeout(200);
+pr = await printed(); log(!!pr && pr.text.includes('דרישת תשלום') && pr.text.includes('ולא חשבונית מס'), 'fee request prints and says it is not a tax invoice');
+await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+log(!(await page.evaluate(() => !!document.querySelector('.print-root'))), 'closing the document removes the print copy');
+
+// 11c the office's data: export and deletion request (owner)
+await go('/settings/data', 'u_michal');
+const [zipDl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'הורדת הנתונים' }).click()]);
+log(/archiflow-export-.*\.zip$/.test(zipDl.suggestedFilename()), 'owner downloads the data export');
+await page.getByRole('button', { name: 'בקשה למחיקת המשרד' }).click();
+log(await page.getByRole('button', { name: 'מחיקה בעוד 30 ימים' }).isDisabled(), 'deletion needs the office name typed');
+await page.fill('#del-name', 'לוי ברק אדריכלות ועיצוב פנים'); await page.getByRole('button', { name: 'מחיקה בעוד 30 ימים' }).click(); await page.waitForTimeout(200);
+log(!!(await getDb()).db.office.deletionDueAt, 'deletion request scheduled');
+await go('/dashboard', 'u_shira'); log(await page.isVisible('text=המשרד מתוכנן למחיקה'), 'the team sees the scheduled deletion');
+await go('/settings/data', 'u_michal'); await page.getByRole('button', { name: 'ביטול המחיקה' }).click(); await page.waitForTimeout(200);
+log(!(await getDb()).db.office.deletionDueAt, 'owner cancels the deletion');
+await go('/admin/offices/off_7', 'sa_ron'); await page.getByRole('button', { name: 'מחיקת המשרד לצמיתות' }).click();
+await page.fill('#adm-del', 'בית ספר לעיצוב – סטודיו קהילתי'); await page.getByRole('button', { name: 'מחיקה סופית' }).click(); await page.waitForTimeout(200);
+log(!(await getDb()).db.platformOffices.some((o) => o.id === 'off_7'), 'Super Admin deletes an office after its grace period');
+await go('/admin/offices/off_9'); log(await page.getByRole('button', { name: 'מחיקת המשרד לצמיתות' }).isDisabled(), 'no deletion during the grace period');
+
 // 12 reset
+await go('/dashboard', 'u_yoav');
 await page.click('text=איפוס נתוני הדגמה');
 await page.click('.demo-strip >> text=כן, אפס');
 await page.waitForTimeout(300);

@@ -1,6 +1,7 @@
 // Site supervision: visits, findings with photos, a report for the client and a printable copy.
 import { useState } from 'react';
 import { LuHardHat, LuPlus, LuSend, LuPrinter, LuPencil, LuTrash2, LuListChecks, LuMapPin, LuUser, LuCalendarClock, LuCheck, LuArrowRight, LuCamera } from 'react-icons/lu';
+import { PrintModal } from './PrintDocs';
 import { useStore } from '../data/store';
 import { A, uid, projectOf, clientOf, openFindings } from '../data/api';
 import { SEVERITY, FINDING_STATUS, NEXT_FINDING } from '../data/architect';
@@ -199,8 +200,6 @@ export function SiteReport({ v }: { v: T.SiteVisit }) {
 
 function ReportPreview({ v, onClose }: { v: T.SiteVisit; onClose: () => void }) {
   return (
-    <Modal title="דו״ח פיקוח" size="wide" onClose={onClose} foot={<><Btn kind="primary" icon={LuPrinter} onClick={() => window.print()}>הדפסה / שמירה כ-PDF</Btn><Btn kind="ghost" onClick={onClose}>סגירה</Btn></>}>
-      <div className="print-area"><SiteReport v={v} /></div>
-    </Modal>
+    <PrintModal title="דו״ח פיקוח" onClose={onClose}><SiteReport v={v} /></PrintModal>
   );
 }

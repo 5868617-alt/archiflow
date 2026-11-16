@@ -53,12 +53,21 @@ function statusFor(code, authed) {
 }
 function jwt(user) {
   const b = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-  return `${b({ alg: 'none', typ: 'JWT' })}.${b({ sub: user.id, email: user.email, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600, user_metadata: user.meta || {} })}.test`;
+  return `${b({ alg: 'none', typ: 'JWT' })}.${b({ sub: user.id, email: user.email, role: 'authenticated', aal: user.aal || 'aal1', exp: Math.floor(Date.now() / 1000) + 3600, user_metadata: user.meta || {} })}.test`;
+}
+// ---- TOTP (RFC 6238), as Supabase Auth MFA: 30 s steps, 6 digits, SHA-1
+const factorSecrets = new Map(); // factor id -> base32 secret
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32decode(s) { let bits = ''; for (const ch of s.replace(/=+$/, '').toUpperCase()) bits += B32.indexOf(ch).toString(2).padStart(5, '0'); const out = []; for (let i = 0; i + 8 <= bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8), 2)); return Buffer.from(out); }
+export function totp(secret, t = Date.now()) {
+  const ctr = Buffer.alloc(8); ctr.writeBigUInt64BE(BigInt(Math.floor(t / 30000)));
+  const h = crypto.createHmac('sha1', b32decode(secret)).update(ctr).digest(); const o = h[h.length - 1] & 15;
+  return String(((h.readUInt32BE(o) & 0x7fffffff) % 1000000)).padStart(6, '0');
 }
 function claimsOf(req) {
   const h = req.headers.authorization || '';
   if (!h.startsWith('Bearer ')) return null;
-  try { const p = JSON.parse(Buffer.from(h.slice(7).split('.')[1], 'base64url').toString()); if (p.exp < Date.now() / 1000) return 'expired'; return { sub: p.sub, email: p.email }; } catch { return null; }
+  try { const p = JSON.parse(Buffer.from(h.slice(7).split('.')[1], 'base64url').toString()); if (p.exp < Date.now() / 1000) return 'expired'; return { sub: p.sub, email: p.email, aal: p.aal || 'aal1' }; } catch { return null; }
 }
 const send = (res, status, body, headers = {}) => { res.writeHead(status, { 'Content-Type': 'application/json', ...headers }); res.end(body === undefined ? '' : typeof body === 'string' ? body : JSON.stringify(body)); };
 const readBody = (req) => new Promise((r) => { const ch = []; req.on('data', (c) => ch.push(c)); req.on('end', () => r(Buffer.concat(ch))); });
@@ -105,6 +114,38 @@ async function auth(req, res, url, body) {
     return send(res, 200, {});
   }
   if (route === 'logout') return send(res, 204);
+  // ---- two-factor (Supabase Auth MFA subset)
+  if (route === 'user' && req.method === 'GET') {
+    const c = claimsOf(req); if (!c || c === 'expired') return send(res, 401, { msg: 'unauthorized' });
+    const r = await psql(`select coalesce(json_agg(json_build_object('id', id, 'factor_type', factor_type, 'status', status, 'friendly_name', friendly_name, 'created_at', created_at)), '[]') from auth.mfa_factors where user_id = ${lit(c.sub)}`);
+    return send(res, 200, { id: c.sub, email: c.email, factors: JSON.parse(r.out || '[]') });
+  }
+  if (route.startsWith('factors')) {
+    const c = claimsOf(req); if (!c || c === 'expired') return send(res, 401, { msg: 'unauthorized' });
+    const [, fid, step] = route.split('/');
+    if (!fid && req.method === 'POST') {
+      const secret = Array.from(crypto.randomBytes(20), (x) => B32[x & 31]).join('');
+      const r = await psql(`insert into auth.mfa_factors (user_id, friendly_name, factor_type, status) values (${lit(c.sub)}, ${lit(j.friendly_name || '')}, 'totp', 'unverified') returning id`);
+      const id = r.out.split('\n').pop(); factorSecrets.set(id, secret);
+      const uri = `otpauth://totp/${encodeURIComponent(j.issuer || 'ArchiFlow')}:${encodeURIComponent(c.email)}?secret=${secret}&issuer=${encodeURIComponent(j.issuer || 'ArchiFlow')}`;
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" fill="#fff"/><rect x="20" y="20" width="140" height="140" fill="#000"/></svg>';
+      return send(res, 200, { id, type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,' + encodeURIComponent(svg), secret, uri } });
+    }
+    const own = await psql(`select status from auth.mfa_factors where id = ${lit(fid)} and user_id = ${lit(c.sub)}`);
+    if (!own.out) return send(res, 404, { error_code: 'mfa_factor_not_found', msg: 'Factor not found' });
+    if (step === 'challenge') return send(res, 200, { id: crypto.randomUUID(), type: 'totp', expires_at: Math.floor(Date.now() / 1000) + 300 });
+    if (step === 'verify') {
+      const s = factorSecrets.get(fid); const now = Date.now();
+      if (!s || ![now - 30000, now, now + 30000].some((t) => totp(s, t) === String(j.code))) return send(res, 422, { error_code: 'mfa_verification_failed', msg: 'Invalid TOTP code entered' });
+      await psql(`update auth.mfa_factors set status = 'verified', updated_at = now() where id = ${lit(fid)}`);
+      const u = await userByEmail(c.email); return send(res, 200, await session({ ...u, aal: 'aal2' }));
+    }
+    if (!step && req.method === 'DELETE') {
+      if (own.out === 'verified' && c.aal !== 'aal2') return send(res, 403, { error_code: 'insufficient_aal', msg: 'AAL2 required to unenroll verified factor' });
+      await psql(`delete from auth.mfa_factors where id = ${lit(fid)}`); factorSecrets.delete(fid);
+      return send(res, 200, { id: fid });
+    }
+  }
   if (route === 'user' && req.method === 'PUT') {
     const c = claimsOf(req); if (!c || c === 'expired') return send(res, 401, { msg: 'unauthorized' });
     passwords.set(c.email.toLowerCase(), j.password); return send(res, 200, { id: c.sub, email: c.email });
@@ -188,6 +229,15 @@ async function storage(req, res, url, body) {
     const token = crypto.randomBytes(12).toString('hex'); signed.set(token, { bucket, name, mime: last });
     return send(res, 200, { signedURL: `/object/sign/${bucket}/${rest.map(encodeURIComponent).join('/')}?token=${token}` });
   }
+  if (req.method === 'DELETE' && !rel.includes('/')) {
+    // like Supabase: DELETE /object/{bucket} with {"prefixes": [...]} removes what the caller's policies allow
+    const names = (JSON.parse(body.toString() || '{}').prefixes || []).map(String);
+    const r = await psql(asRole(claims, `with d as (delete from storage.objects where bucket_id = ${lit(rel)} and name in (select jsonb_array_elements_text(${dq(JSON.stringify(names))}::jsonb)) returning name) select coalesce(json_agg(name), '[]') from d`));
+    if (r.code) { const e = pgError(r.err); return send(res, 400, { statusCode: '403', error: 'Unauthorized', message: e.message }); }
+    const gone = JSON.parse(r.out.split('\n').pop() || '[]');
+    for (const n of gone) { try { fs.unlinkSync(path.join(FILES, rel, n)); } catch { /* not on disk */ } }
+    return send(res, 200, gone.map((name) => ({ name, bucket_id: rel })));
+  }
   if (req.method === 'POST') {
     const [bucket, ...rest] = rel.split('/'); const name = rest.join('/');
     const mime = req.headers['content-type'] || 'application/octet-stream';
@@ -213,11 +263,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/rest/v1/')) return await rest(req, res, url, body);
     if (url.pathname.startsWith('/storage/v1/object/')) return await storage(req, res, url, body);
     if (url.pathname === '/__test/mailbox') return send(res, 200, mailbox);
+    if (url.pathname === '/__test/totp') return send(res, 200, { code: totp(factorSecrets.get(url.searchParams.get('factor')) || '') });
     if (url.pathname === '/__test/confirm') { await psql(`update auth.users set email_confirmed_at = now() where lower(email) = lower(${lit(url.searchParams.get('email'))})`); const m = mailbox.find((x) => x.to === url.searchParams.get('email')); const u = await userByEmail(url.searchParams.get('email')); const s = await session(u); return send(res, 200, { link: `${m?.redirect || '/'}#access_token=${s.access_token}&refresh_token=${s.refresh_token}&expires_in=3600&type=signup` }); }
     if (url.pathname === '/__test/recovery') { const u = await userByEmail(url.searchParams.get('email')); const s = await session(u); return send(res, 200, { link: `/#access_token=${s.access_token}&refresh_token=${s.refresh_token}&expires_in=3600&type=recovery` }); }
     if (url.pathname === '/__test/sql') { const r = await psql(body.toString()); return send(res, 200, r); }
     if (url.pathname.startsWith('/_pdfjs/')) { res.writeHead(200, { 'Content-Type': 'text/javascript' }); return fs.createReadStream(path.join(PDFJS, path.basename(url.pathname))).pipe(res); }
-    const STATIC_TYPES = { '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.js': 'text/javascript' };
+    const STATIC_TYPES = { '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.js': 'text/javascript', '.webp': 'image/webp', '.txt': 'text/plain', '.xml': 'application/xml' };
     const sf = path.join(path.dirname(SITE), path.basename(url.pathname));
     if (req.method === 'GET' && STATIC_TYPES[path.extname(url.pathname)] && url.pathname.split('/').length === 2 && fs.existsSync(sf)) { res.writeHead(200, { 'Content-Type': STATIC_TYPES[path.extname(url.pathname)] }); return fs.createReadStream(sf).pipe(res); }
     if (req.method === 'GET') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(fs.readFileSync(SITE)); }

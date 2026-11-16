@@ -16,7 +16,9 @@ export const PRIORITIES = ['נמוכה', 'בינונית', 'גבוהה', 'דחו
 export type Priority = typeof PRIORITIES[number];
 
 /** table: offices */
-export interface Office { id: string; name: string; legalName: string; city: string; address: string; phone: string; email: string; vatId: string; createdAt: string; logoText: string; specialties: string[]; }
+export interface Office { id: string; name: string; legalName: string; city: string; address: string; phone: string; email: string; vatId: string; createdAt: string; logoText: string; specialties: string[];
+  /** the owner asked to delete the office: the date asked and the date it may be deleted (30-day grace period) */
+  deletionRequestedAt?: string; deletionDueAt?: string; }
 
 /** table: users (+ auth.users) */
 export interface User { id: string; name: string; email: string; phone?: string; title: string; color: string; role: Role; officeId?: string; clientId?: string; status: 'פעיל' | 'הוזמן' | 'מושבת'; joinedAt: string; lastActive: string; }
@@ -153,7 +155,7 @@ export interface SystemEvent { id: string; at: string; level: 'info' | 'warn' | 
 /** table: announcements */
 export interface Announcement { id: string; title: string; body: string; audience: string; status: 'טיוטה' | 'פורסם' | 'מתוזמן'; at: string; }
 /** platform-level: offices directory (super admin) */
-export interface PlatformOffice { id: string; name: string; city: string; ownerName: string; ownerEmail: string; planId: 'starter' | 'pro'; status: OfficeSubscription['status']; users: number; projects: number; storageGb: number; createdAt: string; lastActive: string; mrr: number; }
+export interface PlatformOffice { id: string; name: string; city: string; ownerName: string; ownerEmail: string; planId: 'starter' | 'pro'; status: OfficeSubscription['status']; users: number; projects: number; storageGb: number; createdAt: string; lastActive: string; mrr: number; deletionRequestedAt?: string; deletionDueAt?: string; }
 
 // ---------------------------------------------------------------- architect workflow (migration 012)
 /** table: project_phases – the studio's design phases for one project (fees stay in fee_milestones) */

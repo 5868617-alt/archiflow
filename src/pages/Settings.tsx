@@ -1,5 +1,5 @@
 import { IS_LIVE } from '../data/dates';
-import { pwProblem } from '../live/AuthLive';
+import { pwProblem, TwoFactorCard } from '../live/AuthLive';
 import { friendlyError } from '../live/errors';
 import { useState } from 'react';
 import { LuBuilding2, LuPlug, LuWallet, LuShieldCheck, LuDatabase, LuSave, LuRotateCcw, LuUsers, LuBell } from 'react-icons/lu';
@@ -9,6 +9,7 @@ import { PageHead, Btn, Card, KV, Tabs, Field, Input, Select, Textarea, Callout,
 import { CalendarSync } from './Calendar';
 import { BrandingCard } from './Branding';
 import { date } from '../lib/format';
+import { OfficeDataTab } from './OfficeData';
 
 export function SettingsPage({ query }: any) {
   const { db, me, run, toast, nav, reset, live } = useStore();
@@ -28,8 +29,8 @@ export function SettingsPage({ query }: any) {
   ];
   return (
     <div>
-      <PageHead title="הגדרות משרד" sub="פרופיל המשרד, תקציב, אינטגרציות ונתוני הדגמה." />
-      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'office', label: 'פרופיל משרד', icon: LuBuilding2 }, { id: 'budget', label: 'תקציבים', icon: LuWallet }, { id: 'integrations', label: 'אינטגרציות', icon: LuPlug }, { id: 'security', label: 'אבטחה ופרטיות', icon: LuShieldCheck }, { id: 'data', label: 'נתוני הדגמה', icon: LuDatabase }]} />
+      <PageHead title="הגדרות משרד" sub="פרופיל המשרד, תקציב, אינטגרציות, אבטחה והנתונים שלכם." />
+      <Tabs value={tab} onChange={setTab} tabs={[{ id: 'office', label: 'פרופיל משרד', icon: LuBuilding2 }, { id: 'budget', label: 'תקציבים', icon: LuWallet }, { id: 'integrations', label: 'אינטגרציות', icon: LuPlug }, { id: 'security', label: 'אבטחה ופרטיות', icon: LuShieldCheck }, { id: 'data', label: 'הנתונים שלכם', icon: LuDatabase }]} />
       {tab === 'office' ? (
         <div className="grid-main-side">
           <Card title="פרטי המשרד">
@@ -77,7 +78,7 @@ export function SettingsPage({ query }: any) {
           {IS_LIVE ? <Callout kind="ok" title="האבטחה נאכפת בשרת">התחברות אמיתית, הרשאות לפי תפקיד ושיוך לפרויקט, והפרדה מלאה בין משרדים – הכול נאכף במסד הנתונים ולא רק בממשק.</Callout> : <Callout kind="bad" title="אין אבטחה אמיתית בדמו">ההתחברות, ההרשאות והגבלות הגישה מדומות בדפדפן. כל אחד שפותח את הקישור יכול להחליף תפקיד. אין להזין מידע אמיתי.</Callout>}
           <Card title={IS_LIVE ? 'מה נאכף' : 'מה יאכף בייצור'}>
             <ul className="small" style={{ margin: 0, paddingInlineStart: 18, lineHeight: 2 }}>
-              <li>{IS_LIVE ? 'התחברות דרך Supabase Auth עם אימות מייל. אימות דו-שלבי – בשלב הבא.' : 'התחברות דרך Supabase Auth (מייל + סיסמה / קישור קסם), אימות דו-שלבי לבעלים – לשיקול.'}</li>
+              <li>{IS_LIVE ? 'התחברות דרך Supabase Auth עם אימות מייל. אימות דו-שלבי (אפליקציית אימות) – בפרופיל של כל משתמש, ונאכף גם במסד.' : 'התחברות דרך Supabase Auth (מייל + סיסמה / קישור קסם), אימות דו-שלבי לבעלים – לשיקול.'}</li>
               <li>Row Level Security לכל טבלה לפי office_id ושיוך לפרויקט; לקוח רואה רק רשומות עם shared_with_client.</li>
               <li>אחסון קבצים בדליים פרטיים עם קישורים חתומים לזמן מוגבל.</li>
               <li>יומן ביקורת לפעולות רגישות: הרשאות, מחיקות, ייצוא, גישת Super Admin.</li>
@@ -85,13 +86,14 @@ export function SettingsPage({ query }: any) {
           </Card>
         </div>
       ) : null}
-      {tab === 'data' ? (
-        <Card title="נתוני הדגמה">
+      {tab === 'data' ? <OfficeDataTab /> : null}
+      {tab === 'data' && !IS_LIVE ? (
+        <div className="mt24" style={{ maxWidth: 820 }}><Card title="נתוני הדגמה">
           <div className="stack">
             <KV items={[['פרויקטים', db.projects.length], ['משימות', db.tasks.length], ['שרטוטים', db.plans.length], ['פריטי מפרט', db.specItems.length], ['הוצאות', db.expenses.length], ['נשמר', 'בדפדפן הזה בלבד']]} />
             <div><Btn kind="danger" icon={LuRotateCcw} onClick={() => setResetC(true)}>איפוס כל נתוני ההדגמה</Btn></div>
           </div>
-        </Card>
+        </Card></div>
       ) : null}
       {resetC ? <Confirm title="איפוס נתוני הדגמה" danger confirmLabel="איפוס" onClose={() => setResetC(false)} onConfirm={reset}>כל השינויים שביצעתם יימחקו והנתונים יחזרו למצב ההתחלתי.</Confirm> : null}
     </div>
@@ -115,7 +117,7 @@ export function ProfilePage() {
           </div>
           <div className="mt16"><Btn kind="primary" onClick={() => { if (!f.name.trim()) return; run((d: any, c: any) => Object.assign(d.users.find((u: any) => u.id === c.me.id), f)); toast('הפרופיל נשמר'); }}>שמירה</Btn></div>
         </Card>
-        {IS_LIVE ? <PasswordCard /> : <Card title="סיסמה ואבטחה"><div className="row g8 wrap"><Btn disabled title="לא זמין בדמו">שינוי סיסמה</Btn><Btn disabled title="לא זמין בדמו">אימות דו-שלבי</Btn><DemoTag>אין התחברות אמיתית בדמו</DemoTag></div></Card>}
+        {IS_LIVE ? <><PasswordCard />{me.role !== 'client' ? <TwoFactorCard /> : null}</> : <Card title="סיסמה ואבטחה"><div className="row g8 wrap"><Btn disabled title="לא זמין בדמו">שינוי סיסמה</Btn><Btn disabled title="לא זמין בדמו">אימות דו-שלבי</Btn><DemoTag>אין התחברות אמיתית בדמו</DemoTag></div></Card>}
       </div>
     </div>
   );

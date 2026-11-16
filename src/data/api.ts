@@ -460,6 +460,29 @@ export const A = {
     const p: any = byId(db.subscriptionPlans as any, planId); p.features[key] = !p.features[key];
     db.pricingChanges.unshift({ id: uid('pc'), at: nowStamp(), planId, field: 'פיצ׳ר: ' + key, from: p.features[key] ? 'כבוי' : 'פעיל', to: p.features[key] ? 'פעיל' : 'כבוי', by: ctx.me.name, note: '' });
   },
+  // ---------- the office's own data: export and deletion (owner only; the server checks again) ----------
+  recordExport(db: DB, ctx: C, rows: number) { db.auditLog.unshift({ id: uid('au'), at: nowStamp(), actor: ctx.me.name, officeId: 'off_1', action: 'ייצוא נתוני המשרד', target: `${rows} רשומות`, ip: 'demo' }); },
+  requestOfficeDeletion(db: DB, ctx: C, confirmName: string) {
+    if (ctx.me.role !== 'owner') return;
+    if (confirmName.trim() !== db.office.name.trim()) return;
+    db.office.deletionRequestedAt = todayISO; db.office.deletionDueAt = D(30);
+    const po = db.platformOffices.find((o) => o.id === 'off_1'); if (po) { po.deletionRequestedAt = todayISO; po.deletionDueAt = D(30); }
+    db.auditLog.unshift({ id: uid('au'), at: nowStamp(), actor: ctx.me.name, officeId: 'off_1', action: 'בקשה למחיקת המשרד', target: `מחיקה אפשרית מ-${D(30)}`, ip: 'demo' });
+  },
+  cancelOfficeDeletion(db: DB, ctx: C) {
+    db.office.deletionRequestedAt = undefined; db.office.deletionDueAt = undefined;
+    const po = db.platformOffices.find((o) => o.id === 'off_1'); if (po) { po.deletionRequestedAt = undefined; po.deletionDueAt = undefined; }
+    db.auditLog.unshift({ id: uid('au'), at: nowStamp(), actor: ctx.me.name, officeId: 'off_1', action: 'ביטול בקשת מחיקה', target: db.office.name, ip: 'demo' });
+  },
+  adminDeleteOffice(db: DB, ctx: C, officeId: string, confirmName: string) {
+    const o = byId(db.platformOffices, officeId);
+    if (!o || !o.deletionDueAt) return;
+    if (daysFromToday(o.deletionDueAt) > 0) return;
+    if (confirmName.trim() !== o.name.trim()) return;
+    if (officeId === 'off_1' && !(globalThis as any).__AF_LIVE) return;
+    db.platformOffices = db.platformOffices.filter((x) => x.id !== officeId);
+    db.auditLog.unshift({ id: uid('au'), at: nowStamp(), actor: ctx.me.name + ' (Super Admin)', officeId: '', action: 'מחיקת משרד', target: o.name, ip: 'demo' });
+  },
   setOfficeStatus(db: DB, ctx: C, officeId: string, status: T.PlatformOffice['status']) { const o = byId(db.platformOffices, officeId)!; o.status = status; if (officeId === 'off_1') db.officeSubscription.status = status; db.auditLog.unshift({ id: uid('au'), at: nowStamp(), actor: ctx.me.name + ' (Super Admin)', officeId, action: 'שינוי מצב מנוי', target: `${o.name} → ${status}`, ip: 'demo' }); },
   ticketReply(db: DB, ctx: C, id: string, text: string, side: 'user' | 'support') { const t = byId(db.tickets, id)!; t.messages.push({ side, name: side === 'support' ? 'צוות ArchiFlow' : ctx.me.name, text, at: nowStamp() }); if (side === 'support' && t.status === 'פתוח') t.status = 'בטיפול'; if (side === 'user' && t.status === 'ממתין למשתמש') t.status = 'בטיפול'; },
   setTicket(db: DB, ctx: C, id: string, patch: Partial<T.Ticket>) { Object.assign(byId(db.tickets, id)!, patch); },

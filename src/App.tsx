@@ -31,7 +31,8 @@ import { AdminRouter } from './pages/Admin';
 import { AccessibilityStatement } from './pages/AccessibilityStatement';
 import { TimePage } from './pages/Time';
 import { LibraryPage } from './pages/Library';
-import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired } from './live/AuthLive';
+import { Landing } from './pages/Landing';
+import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired, LiveMfaChallenge } from './live/AuthLive';
 
 function Denied({ text }: any) {
   const { me, nav, live } = useStore();
@@ -74,7 +75,7 @@ function OfficeRoutes() {
     case 'library': return <LibraryPage query={query} />;
     case 'messages': return !hasFeature(db, 'client_portal') ? <LockedFeature feature="client_portal" /> : <MessagesPage query={query} />;
     case 'notifications': return <NotificationsPage />;
-    case 'settings': return <SettingsPage query={query} />;
+    case 'settings': return <SettingsPage key={b || ''} query={b ? { ...query, tab: b } : query} />;
     case 'profile': return <ProfilePage />;
     case 'billing':
       if (me.role !== 'owner' && me.role !== 'admin') return <Denied text="מנוי וחיוב זמינים לבעלי המשרד." />;
@@ -103,10 +104,12 @@ export function App() {
     if (live.landing?.kind === 'expired') return <PublicShell plain><LiveLinkExpired /></PublicShell>;
     if (live.status === 'boot' || live.status === 'loading') return <LiveLoading />;
     if (live.status === 'error') return <LiveError />;
+    if (live.status === 'mfa') return <PublicShell plain><LiveMfaChallenge /></PublicShell>;
     if (live.status === 'anon') {
       if (a === 'register') return <PublicShell plain><LiveRegister /></PublicShell>;
       if (a === 'forgot') return <PublicShell plain><LiveForgot /></PublicShell>;
       if (a === 'pricing') return <PublicShell><PricingPage /></PublicShell>;
+      if (!a || a === 'home') return <Landing />;
       return <PublicShell plain><LiveLogin /></PublicShell>;
     }
     if (live.status === 'no-context') return <PublicShell plain><LiveOnboarding /></PublicShell>;

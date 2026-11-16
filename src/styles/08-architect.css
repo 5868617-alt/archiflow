@@ -94,12 +94,14 @@
 .sr-photo { float: left; width: 120px; height: 90px; object-fit: cover; border-radius: var(--r-sm); margin-inline-start: 12px; }
 .sr-foot { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--line); }
 .t-left { text-align: left; }
+/* printing: the open document is copied into .print-root (a direct child of <body>); only it is printed */
+.print-root { display: none; }
 @media print {
-  body * { visibility: hidden !important; }
-  .print-area, .print-area * { visibility: visible !important; }
-  .print-area { position: absolute; inset: 0; padding: 12mm; background: #fff; color: #000; }
-  .scrim, .modal { position: static !important; background: none !important; box-shadow: none !important; overflow: visible !important; max-height: none !important; }
-  .print-area .sr-findings li { break-inside: avoid; }
+  body > *:not(.print-root) { display: none !important; }
+  html, body { background: #fff !important; height: auto !important; min-height: 0 !important; position: static !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+  html::before, html::after, body::before, body::after { display: none !important; content: none !important; }
+  .print-root { display: block !important; color: #000; }
+  .print-root .sr-findings li { break-inside: avoid; }
 }
 
 /* ---------- brief ---------- */
@@ -159,3 +161,40 @@
 html[data-hc] .portal .portal-hero { background-color: #000; }
 .brief-q .chips { flex-wrap: wrap !important; overflow: visible !important; }
 @media (max-width: 760px), (pointer: coarse) { .brand-swatch { width: var(--tap); height: var(--tap); } }
+
+/* ---------- branded printable documents (purchase order, meeting summary, fee request) ---------- */
+.pdoc { display: flex; flex-direction: column; gap: 16px; color: var(--ink); background: var(--surface); }
+.pdoc-head { display: flex; gap: 16px; align-items: flex-start; padding-bottom: 16px; border-bottom: 3px solid var(--brand, var(--navy)); }
+.pdoc-office { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-lg); }
+.pdoc-kind { text-align: end; min-width: 120px; }
+.pdoc-kind-t { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-xl); color: var(--brand, var(--navy)); line-height: 1.2; }
+.pdoc-title { font-size: var(--fs-2xl); margin: 0; }
+.pdoc-parties { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }
+.pdoc-parties dt { font-size: var(--fs-xs); font-weight: 700; color: var(--ink-3); letter-spacing: .02em; margin-bottom: 4px; }
+.pdoc-parties dd { margin: 0; font-size: var(--fs-sm); line-height: 1.6; }
+.pdoc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.pdoc-table th { text-align: start; font-size: var(--fs-xs); color: var(--ink-3); font-weight: 700; padding: 8px; border-bottom: 2px solid var(--line-strong); }
+.pdoc-table td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pdoc-table .num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pdoc-table tfoot td { border-bottom: 0; padding-top: 4px; padding-bottom: 4px; }
+.pdoc-table tfoot td:first-child { text-align: end; color: var(--ink-2); }
+.pdoc-total td { font-weight: 800; font-size: var(--fs-md); border-top: 2px solid var(--brand, var(--navy)) !important; padding-top: 8px !important; }
+.pdoc-sec h3 { font-size: var(--fs-md); margin: 0 0 8px; color: var(--brand, var(--navy)); }
+.pdoc-sec p, .pdoc-sec ol { margin: 0; font-size: var(--fs-sm); line-height: 1.7; }
+.pdoc-sec ol { padding-inline-start: 20px; }
+.pdoc-sign { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 24px; }
+.pdoc-sign div { display: flex; flex-direction: column-reverse; gap: 8px; font-size: var(--fs-xs); color: var(--ink-3); }
+.pdoc-sign i { display: block; height: 40px; border-bottom: 1px solid var(--ink-3); }
+.pdoc-foot { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--line); line-height: 1.6; }
+@media (max-width: 640px) { .pdoc-head { flex-wrap: wrap; } .pdoc-kind { text-align: start; } .pdoc-parties, .pdoc-sign { grid-template-columns: 1fr; } }
+@media print {
+  .print-root .pdoc { color: #000; background: #fff; }
+  .print-root .pdoc-table tr, .print-root .pdoc-sec { break-inside: avoid; }
+  @page { size: A4; margin: 12mm; }
+}
+.pdoc-contact { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+/* two-factor */
+.mfa-code { font-size: 1.5rem; letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+.mfa-enroll { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; }
+.mfa-enroll img { background: #fff; padding: 8px; border-radius: var(--r-md); border: 1px solid var(--line); }
+.mfa-secret { font-family: var(--font-mono, monospace); font-size: var(--fs-sm); padding: 8px 12px; background: var(--surface-2); border-radius: var(--r-sm); word-break: break-all; }
