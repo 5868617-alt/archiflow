@@ -1599,6 +1599,9 @@ export type Database = {
           city: string | null
           created_at: string
           created_by: string | null
+          deletion_due_at: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
           email: string | null
           id: string
           legal_name: string | null
@@ -1614,6 +1617,9 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          deletion_due_at?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
           email?: string | null
           id?: string
           legal_name?: string | null
@@ -1629,6 +1635,9 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          deletion_due_at?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
           email?: string | null
           id?: string
           legal_name?: string | null
@@ -3477,6 +3486,21 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      admin_delete_office: {
+        Args: { p_confirm_name: string; p_office: string }
+        Returns: undefined
+      }
+      admin_deletion_requests: {
+        Args: never
+        Returns: {
+          due_at: string
+          id: string
+          name: string
+          owner_email: string
+          owner_name: string
+          requested_at: string
+        }[]
+      }
       admin_offices_overview: {
         Args: never
         Returns: {
@@ -3494,6 +3518,18 @@ export type Database = {
           storage_bytes: number
           users: number
         }[]
+      }
+      admin_orphan_files: {
+        Args: never
+        Returns: {
+          bucket: string
+          name: string
+          size: number
+        }[]
+      }
+      admin_reset_mfa: {
+        Args: { p_note: string; p_user: string }
+        Returns: number
       }
       admin_set_subscription_status: {
         Args: {
@@ -3522,6 +3558,7 @@ export type Database = {
         Returns: number
       }
       cancel_approval: { Args: { p_approval: string }; Returns: undefined }
+      cancel_office_deletion: { Args: { p_office: string }; Returns: undefined }
       client_budget_summary: {
         Args: { p_project: string }
         Returns: {
@@ -3558,6 +3595,10 @@ export type Database = {
         Args: { p_comment?: string; p_item: string; p_reaction: string }
         Returns: undefined
       }
+      record_data_export: {
+        Args: { p_office: string; p_rows: number }
+        Returns: undefined
+      }
       request_approval: {
         Args: {
           p_amount?: number
@@ -3573,6 +3614,10 @@ export type Database = {
       request_cancellation: {
         Args: { p_office: string; p_reason: string }
         Returns: undefined
+      }
+      request_office_deletion: {
+        Args: { p_confirm_name: string; p_office: string }
+        Returns: string
       }
       request_plan_change: {
         Args: {
