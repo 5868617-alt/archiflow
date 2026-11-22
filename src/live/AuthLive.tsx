@@ -209,7 +209,7 @@ export function LiveOnboarding() {
             <p className="soft">אפשר להזמין עכשיו או לדלג ולעשות זאת מאוחר יותר במסך הצוות.</p>
             {f.invites.map((e, i) => <div key={i} className="row g8"><Input className="ltr" value={e} placeholder="name@studio.co.il" aria-label={`מייל ${i + 1}`} onChange={(ev: any) => { const a = [...f.invites]; a[i] = ev.target.value; setF({ ...f, invites: a }); }} />{f.invites.length > 1 ? <button type="button" className="icon-btn" aria-label="הסרה" onClick={() => setF({ ...f, invites: f.invites.filter((_, j) => j !== i) })}><LuX /></button> : null}</div>)}
             <div><Btn size="sm" icon={LuPlus} onClick={() => setF({ ...f, invites: [...f.invites, ''] })}>עוד מייל</Btn></div>
-            <Callout kind="assume" title="שליחת מיילים">ההזמנות נשמרות בתור. המיילים יישלחו בפועל אחרי חיבור שירות המייל (Resend). עד אז אפשר לשלוח לחברי הצוות את קישור ההרשמה ידנית.</Callout>
+            <Callout kind="assume" title="שליחת מיילים">שירות המייל מחובר, אבל עד שיאומת דומיין של ArchiFlow הוא שולח רק לכתובת של בעלת המערכת. עד אז, שלחו לחברי הצוות את קישור ההרשמה בעצמכם (וואטסאפ או מייל).</Callout>
           </div>
         ) : null}
         {step === 3 ? (

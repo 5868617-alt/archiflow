@@ -61,7 +61,7 @@ function Prefs() {
           {rows.map(([k, label, hint]) => <tr key={k}><td><b>{label}</b><div className="xs muted">{hint}</div></td>{['app', 'email'].map((ch) => <td key={ch} className="t-center"><span style={{ display: 'inline-block' }}><Switch id={`pref-${k}-${ch}`} checked={db.settings.notif[k][ch]} onChange={(v: boolean) => { run(A.setSetting, `notif.${k}.${ch}`, v); toast('ההעדפה נשמרה'); }} /></span></td>)}</tr>)}
         </tbody></table></div>
       </Card>
-      {IS_LIVE ? <Callout kind="assume" title="שליחת מיילים">מיילים אוטומטיים נכנסים לתור ונשלחים מצד השרת דרך Resend, עם קישור חזרה לרשומה. עד שחשבון Resend מחובר, המיילים נשארים בתור במצב "בתור לשליחה".</Callout> : <Callout kind="future" title="מוכנות ל-Resend">מיילים אוטומטיים מתועדים ביומן המיילים עם שם תבנית. בייצור כל תבנית תישלח דרך Resend מצד השרת, עם קישור חזרה לרשומה. בדמו לא נשלח אף מייל.</Callout>}
+      {IS_LIVE ? <Callout kind="assume" title="שליחת מיילים">מיילים אוטומטיים נכנסים לתור ונשלחים מהשרת דרך Resend תוך דקה, עם קישור חזרה לרשומה. שימו לב: עד שיאומת דומיין של ArchiFlow, Resend שולח רק לכתובת של בעלת המערכת, ומייל לכתובת אחרת יסומן "נכשל".</Callout> : <Callout kind="future" title="מוכנות ל-Resend">מיילים אוטומטיים מתועדים ביומן המיילים עם שם תבנית. בייצור כל תבנית תישלח דרך Resend מצד השרת, עם קישור חזרה לרשומה. בדמו לא נשלח אף מייל.</Callout>}
     </div>
   );
 }

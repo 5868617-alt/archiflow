@@ -20,14 +20,17 @@ function render(row: any, appUrl: string) {
     team_invite: 'הצטרפות למשרד', portal_invite: 'כניסה לפורטל', approval_request: 'צפייה ואישור', approval_reminder: 'צפייה ואישור',
     meeting_invite: 'פרטי הפגישה', meeting_summary: 'לסיכום', budget_alert: 'לתקציב', daily_digest: 'ליום שלי', fee_request: 'לפרטים', purchase_order: 'להזמנה',
   };
-  const html = `<!doctype html><html lang="he" dir="rtl"><body style="margin:0;background:#F5F3EE;font-family:Arial,sans-serif;color:#15213B">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">
-  <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:10px;padding:28px;text-align:right">
-  <tr><td style="font-size:20px;font-weight:bold;padding-bottom:12px">${esc(row.subject)}</td></tr>
-  ${p.office ? `<tr><td style="font-size:14px;color:#47526B;padding-bottom:8px">${esc(p.office)}</td></tr>` : ''}
-  ${p.project ? `<tr><td style="font-size:14px;color:#47526B;padding-bottom:8px">פרויקט: ${esc(p.project)}</td></tr>` : ''}
-  <tr><td style="padding:16px 0"><a href="${esc(link)}" style="background:#F2B705;color:#15213B;text-decoration:none;padding:12px 20px;border-radius:6px;font-weight:bold;display:inline-block">${esc(cta[row.template] || 'פתיחה ב-ArchiFlow')}</a></td></tr>
-  <tr><td style="font-size:12px;color:#7A8296">נשלח אוטומטית מ-ArchiFlow. אם לא ציפית למייל הזה אפשר להתעלם ממנו.</td></tr>
+  // brand: plum #3D2233, peach #EFB0A1, pink #F4AFB4 on a warm paper background
+  const html = `<!doctype html><html lang="he" dir="rtl"><body style="margin:0;background:#FBF7F5;font-family:Arial,Helvetica,sans-serif;color:#3D2233">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #EFE3E0">
+  <tr><td style="background:#3D2233;padding:16px 28px;text-align:right;font-size:20px;font-weight:bold;color:#ffffff">Archi<span style="color:#EFB0A1">Flow</span></td></tr>
+  <tr><td style="height:4px;background:#EFB0A1;background-image:linear-gradient(90deg,#F4AFB4,#EFB0A1);font-size:0;line-height:0">&nbsp;</td></tr>
+  <tr><td style="padding:28px 28px 8px;text-align:right;font-size:22px;font-weight:bold;line-height:1.35">${esc(row.subject)}</td></tr>
+  ${p.office ? `<tr><td style="padding:0 28px 4px;text-align:right;font-size:15px;color:#6B5562">${esc(p.office)}</td></tr>` : ''}
+  ${p.project ? `<tr><td style="padding:0 28px 4px;text-align:right;font-size:15px;color:#6B5562">פרויקט: ${esc(p.project)}</td></tr>` : ''}
+  <tr><td style="padding:20px 28px 28px;text-align:right"><a href="${esc(link)}" style="background:#3D2233;color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:10px;font-weight:bold;font-size:16px;display:inline-block">${esc(cta[row.template] || 'פתיחה ב-ArchiFlow')}</a></td></tr>
+  <tr><td style="padding:16px 28px;background:#FBF3F1;text-align:right;font-size:12px;color:#7D6A74;line-height:1.6">נשלח אוטומטית מ-ArchiFlow. אם לא ציפית למייל הזה אפשר להתעלם ממנו.</td></tr>
   </table></td></tr></table></body></html>`;
   return { html, text: `${row.subject}\n${link}` };
 }
