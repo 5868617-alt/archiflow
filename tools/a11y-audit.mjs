@@ -12,6 +12,8 @@ const routes = (new Function(src.slice(src.indexOf('const routes = '), src.index
 const width = Number(process.argv[2] || 1366);
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme: process.env.THEME === 'dark' ? 'dark' : 'light' });
+// the first-visit demo tour is tested on its own (demo-flows); elsewhere it would sit over the page
+await page.addInitScript(() => { try { if (!sessionStorage.getItem('af-tour-test')) localStorage.setItem('archiflow.demo.tour', JSON.stringify({ staff: true, client: true })); } catch { /* ignore */ } });
 await page.goto(new URL('../dist/test.html', import.meta.url).href);
 
 function audit(mobile) {

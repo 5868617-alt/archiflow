@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
+import { startTour } from './DemoTour';
 import { LuSearch, LuBell, LuSun, LuMoon, LuMonitor, LuLogOut, LuRotateCcw, LuFolderKanban, LuUsers, LuListChecks, LuPencilRuler, LuFileText, LuTruck, LuCircleCheck, LuCircleAlert, LuInfo, LuChevronDown, LuCrown, LuUserCog, LuBriefcase, LuHouse } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { visibleProjects, inScope, ROLE_SHORT } from '../data/api';
@@ -77,7 +78,7 @@ export function ThemeToggle() {
 }
 
 export function DemoStrip() {
-  const { reset, live } = useStore();
+  const { reset, live, path } = useStore();
   const [confirm, setConfirm] = useState(false);
   if (live) return live.saving ? <div className="demo-strip" role="status" aria-live="polite"><span className="row g8"><span className="spinner" style={{ width: 12, height: 12 }} />שומר…</span></div> : null;
   return (
@@ -87,7 +88,7 @@ export function DemoStrip() {
       {confirm ? (
         <span className="row g8"><span>לאפס את כל השינויים?</span><button type="button" className="linkish" onClick={() => { reset(); setConfirm(false); }}>כן, אפס</button><button type="button" className="linkish" onClick={() => setConfirm(false)}>לא</button></span>
       ) : (
-        <button type="button" className="linkish row g4" onClick={() => setConfirm(true)}><LuRotateCcw aria-hidden style={{ width: 12, height: 12 }} />איפוס נתוני הדגמה</button>
+        <span className="row g12">{path.startsWith('/login') ? null : <button type="button" className="linkish" onClick={startTour}>סיור קצר</button>}<button type="button" className="linkish row g4" onClick={() => setConfirm(true)}><LuRotateCcw aria-hidden style={{ width: 12, height: 12 }} />איפוס נתוני הדגמה</button></span>
       )}
     </div>
   );

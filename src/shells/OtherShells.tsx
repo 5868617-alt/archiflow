@@ -1,3 +1,4 @@
+import { DemoTour } from './DemoTour';
 import { AccessibilityMenu } from './A11y';
 import { IS_LIVE } from '../data/dates';
 import { useState } from 'react';
@@ -65,6 +66,7 @@ export function PortalShell({ children }: any) {
         <div className="privacy-note"><LuShieldCheck aria-hidden /><span>{IS_LIVE ? 'בפורטל מוצגים רק פריטים שהמשרד סימן כמשותפים איתך. ההגבלה נאכפת בשרת.' : 'בפורטל מוצגים רק פריטים שהמשרד סימן כמשותפים איתך. בדמו ההגבלה מדומה בצד הדפדפן; בגרסת הייצור היא תיאכף בשרת (Row Level Security).'} <span className="muted">· Powered by ArchiFlow</span></span></div>
       </footer>
       <Toasts />
+      <DemoTour />
     </div>
   );
 }

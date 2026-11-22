@@ -15,11 +15,13 @@ const routes = {
   cu_nurit: ['/portal', '/portal/brief', '/portal/inspiration'],
   cu_yael: ['/portal', '/portal/approvals'],
   sa_ron: ['/admin', '/admin/usage', '/admin/offices', '/admin/offices/off_1', '/admin/offices/off_5', '/admin/offices/off_7', '/admin/offices/off_9', '/admin/users', '/admin/users/u_noa', '/admin/subscriptions', '/admin/pricing', '/admin/pricing-log', '/admin/tickets', '/admin/tickets/tk1', '/admin/announcements', '/admin/events', '/admin/audit', '/admin/retention', '/admin/settings', '/dashboard'],
-  anon: ['/login', '/register', '/forgot', '/onboarding', '/pricing'],
+  anon: ['/login', '/demo-login', '/register', '/forgot', '/onboarding', '/pricing'],
 };
 const width = Number(process.argv[2] || 1366);
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width, height: 900 } });
+// the first-visit demo tour is tested on its own (demo-flows); elsewhere it would sit over the page
+await page.addInitScript(() => { try { if (!sessionStorage.getItem('af-tour-test')) localStorage.setItem('archiflow.demo.tour', JSON.stringify({ staff: true, client: true })); } catch { /* ignore */ } });
 let errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('ERR_TUNNEL')) errors.push(m.text()); });

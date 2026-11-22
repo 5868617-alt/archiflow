@@ -1,4 +1,5 @@
 import { IS_LIVE } from '../data/dates';
+import { DemoTour } from './DemoTour';
 import { useState } from 'react';
 import { LuLayoutDashboard, LuFolderKanban, LuUsers, LuListChecks, LuCalendarDays, LuPencilRuler, LuLayers, LuFileText, LuBadgeCheck, LuTruck, LuShoppingCart, LuWallet, LuCoins, LuUserCog, LuMessagesSquare, LuBell, LuSettings, LuCreditCard, LuLifeBuoy, LuMenu, LuLock, LuPlus, LuCalendarPlus, LuReceipt, LuUpload, LuClock, LuLibrary } from 'react-icons/lu';
 import { useStore } from '../data/store';
@@ -117,6 +118,7 @@ export function AppShell({ children }: any) {
       {pal.open ? <CommandPalette onClose={() => pal.setOpen(false)} onHelp={() => pal.setHelp(true)} /> : null}
       {pal.help ? <ShortcutsHelp onClose={() => pal.setHelp(false)} /> : null}
       <Toasts />
+      <DemoTour />
     </div>
   );
 }

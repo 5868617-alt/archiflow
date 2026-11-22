@@ -8,7 +8,7 @@ import { defaultPathFor } from './data/store';
 import { canSeeFinance, hasFeature } from './data/api';
 import { LockedFeature } from './pages/shared';
 
-import { Login, Register, Forgot, Onboarding } from './pages/Auth';
+import { Login, DemoWelcome, Register, Forgot, Onboarding } from './pages/Auth';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectsList } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
@@ -116,7 +116,9 @@ export function App() {
     if (a === 'onboarding') return <PublicShell plain><LiveOnboarding /></PublicShell>;
     if (['login', 'register', 'forgot'].includes(a)) return <LiveLoading />;
   }
-  if (a === 'login') return <PublicShell plain><Login /></PublicShell>;
+  // demo: the entrance explains the demo and lets you pick a role; the sample login form stays one click away
+  if (a === 'login') return <PublicShell plain><DemoWelcome /></PublicShell>;
+  if (a === 'demo-login') return <PublicShell plain><Login /></PublicShell>;
   if (a === 'register') return <PublicShell plain><Register /></PublicShell>;
   if (a === 'forgot') return <PublicShell plain><Forgot /></PublicShell>;
   if (a === 'onboarding') return <PublicShell plain><Onboarding /></PublicShell>;

@@ -3,6 +3,8 @@ const require = createRequire(import.meta.url);
 const { chromium } = (() => { try { return require('playwright'); } catch { return require((process.env.NODE_GLOBAL || '/home/claude/.npm-global/lib/node_modules') + '/playwright'); } })();
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+// the first-visit demo tour is tested on its own (demo-flows); elsewhere it would sit over the page
+await page.addInitScript(() => { try { if (!sessionStorage.getItem('af-tour-test')) localStorage.setItem('archiflow.demo.tour', JSON.stringify({ staff: true, client: true })); } catch { /* ignore */ } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('ERR_TUNNEL')) errors.push(m.text()); });
@@ -14,7 +16,9 @@ const log = (ok, msg) => console.log((ok ? '✓ ' : '✗ ') + msg);
 const getDb = () => page.evaluate(() => JSON.parse(localStorage.getItem('archiflow.demo.v3')));
 const go = async (path, user) => { await page.evaluate(([p, u]) => { const v = JSON.parse(localStorage.getItem('archiflow.demo.v3')); v.path = p; if (u) v.userId = u; localStorage.setItem('archiflow.demo.v3', JSON.stringify(v)); }, [path, user]); await page.reload(); await page.waitForTimeout(250); };
 
-// 1 login
+// 1 login: the demo opens on the welcome screen; the sample login form is one click away
+await page.waitForSelector('text=ברוכים הבאים להדגמה');
+await page.click('button:has-text("לראות את מסך ההתחברות")');
 await page.waitForSelector('text=כניסה לחשבון');
 await page.click('button[type=submit]');
 await page.waitForSelector('h1:has-text(", יואב")', { timeout: 3000 }).then(() => log(true, 'login as Yoav')).catch(() => log(false, 'login'));
@@ -216,6 +220,26 @@ await go('/admin/offices/off_7', 'sa_ron'); await page.getByRole('button', { nam
 await page.fill('#adm-del', 'בית ספר לעיצוב – סטודיו קהילתי'); await page.getByRole('button', { name: 'מחיקה סופית' }).click(); await page.waitForTimeout(200);
 log(!(await getDb()).db.platformOffices.some((o) => o.id === 'off_7'), 'Super Admin deletes an office after its grace period');
 await go('/admin/offices/off_9'); log(await page.getByRole('button', { name: 'מחיקת המשרד לצמיתות' }).isDisabled(), 'no deletion during the grace period');
+
+// 11d demo entrance and the first-visit tour (a fresh visitor, own browser storage)
+{
+  const v = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  await v.goto(url); await v.evaluate(() => localStorage.clear()); await v.reload(); await v.waitForTimeout(500);
+  log(await v.isVisible('text=ברוכים הבאים להדגמה') && (await v.$$('.demo-entry')).length === 4, 'a new visitor sees the demo welcome with 4 ways in');
+  await v.getByRole('button', { name: /בעלת המשרד/ }).click(); await v.waitForTimeout(1000);
+  log(await v.isVisible('.tour-card') && (await v.textContent('.tour-card h2')) === 'היום שלי', 'entering as the owner starts the short tour');
+  let n = 1; while (await v.isVisible('.tour-card') && n < 8) { await v.getByRole('button', { name: /^(הבא|סיום)$/ }).click(); await v.waitForTimeout(250); n++; }
+  log(n === 6 && !(await v.isVisible('.tour-card')), 'the tour has 5 steps and closes at the end');
+  await v.reload(); await v.waitForTimeout(1000);
+  log(!(await v.isVisible('.tour-card')), 'the tour does not come back by itself');
+  await v.getByRole('button', { name: 'סיור קצר' }).click(); await v.waitForTimeout(500);
+  log(await v.isVisible('.tour-card'), 'the demo bar replays the tour');
+  await v.keyboard.press('Escape'); await v.waitForTimeout(200);
+  log(!(await v.isVisible('.tour-card')), 'Escape closes the tour');
+  await v.evaluate(() => { const s = JSON.parse(localStorage.getItem('archiflow.demo.v3')); s.userId = 'cu_dana'; s.path = '/portal'; localStorage.setItem('archiflow.demo.v3', JSON.stringify(s)); }); await v.reload(); await v.waitForTimeout(1200);
+  log(await v.isVisible('.tour-card') && (await v.textContent('.tour-card h2')) === 'הפרויקט של הלקוחה', 'the client portal has its own short tour');
+  await v.close();
+}
 
 // 12 reset
 await go('/dashboard', 'u_yoav');

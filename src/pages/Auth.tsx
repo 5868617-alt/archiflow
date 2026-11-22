@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LuLogIn, LuMail, LuArrowRight, LuCheck, LuCrown, LuHouse, LuBriefcase, LuUserCog, LuShieldAlert, LuPlus, LuX } from 'react-icons/lu';
+import { LuLogIn, LuMail, LuArrowRight, LuArrowLeft, LuCheck, LuCrown, LuHouse, LuBriefcase, LuUserCog, LuShieldAlert, LuPlus, LuX, LuPencilRuler } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { A, ROLE_SHORT, uid } from '../data/api';
 import { todayISO } from '../data/dates';
@@ -69,6 +69,46 @@ export function Login() {
             return <button key={p.id} type="button" className="card link row g12" style={{ padding: '10px 12px', textAlign: 'right', font: 'inherit', color: 'inherit' }} onClick={() => switchUser(p.id)}><span className="li-ic"><Ic aria-hidden /></span><span className="grow"><b className="small">{u.name} · {ROLE_SHORT[u.role]}</b><span className="xs muted" style={{ display: 'block' }}>{p.note}</span></span></button>;
           })}
         </div>
+      </div>
+    </AuthLayout>
+  );
+}
+
+/** Demo entrance: what this is, what you can try, and who you want to be – instead of a login form with fake details. */
+const DEMO_ENTRIES = [
+  { id: 'u_michal', icon: LuBriefcase, title: 'בעלת המשרד', who: 'מיכל לוי', d: 'רואה הכול: פרויקטים, לקוחות, צוות, כספים וחיוב.', best: true },
+  { id: 'u_yoav', icon: LuUserCog, title: 'מנהל משרד', who: 'יואב ברק', d: 'מנהל את כל הפרויקטים והצוות, בלי חיוב המנוי.' },
+  { id: 'u_shira', icon: LuPencilRuler, title: 'מעצבת בצוות', who: 'שירה אלון', d: 'רואה רק את הפרויקטים שלה, בלי כספים.' },
+  { id: 'cu_dana', icon: LuHouse, title: 'לקוחה של המשרד', who: 'דנה כהן', d: 'ככה הלקוחות שלך רואים את הפרויקט: שלב, אישורים ודו״חות.' },
+];
+export function DemoWelcome() {
+  const { db, nav, switchUser } = useStore();
+  return (
+    <AuthLayout title="ברוכים הבאים להדגמה" sub={`זה משרד לדוגמה – ${db.office.name} – עם פרויקטים, לקוחות וצוות. אפשר ללחוץ על הכול ולנסות כל פעולה.`}>
+      <ul className="demo-facts">
+        <li><LuCheck aria-hidden />כל הנתונים בדויים ונשמרים רק בדפדפן שלך.</li>
+        <li><LuCheck aria-hidden />שום מייל לא נשלח ושום תשלום לא מתבצע.</li>
+        <li><LuCheck aria-hidden />אפשר להתחיל מחדש בכל רגע.</li>
+      </ul>
+      <div>
+        <h2 className="demo-who-h">איך תרצו להיכנס?</h2>
+        <div className="col g8">
+          {DEMO_ENTRIES.map((e) => (
+            <button key={e.id} type="button" className={cx('demo-entry', e.best && 'best')} onClick={() => switchUser(e.id)}>
+              <span className="li-ic"><e.icon aria-hidden /></span>
+              <span className="grow">
+                <b>{e.title}{e.best ? <span className="demo-best">מומלץ להתחלה</span> : null}</b>
+                <span className="demo-entry-d">{e.d}</span>
+              </span>
+              <LuArrowLeft aria-hidden className="demo-entry-go" />
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="demo-more">
+        <button type="button" className="linkish" onClick={() => switchUser('sa_ron')}>כניסה כמנהלת המערכת (Super Admin)</button>
+        <button type="button" className="linkish" onClick={() => nav('/demo-login')}>לראות את מסך ההתחברות</button>
+        {location.protocol === 'https:' ? <a className="linkish" href="/#/register">רוצים משרד אמיתי? פתיחת משרד</a> : null}
       </div>
     </AuthLayout>
   );
