@@ -1,32 +1,56 @@
 import { useState } from 'react';
-import { LuLogIn, LuMail, LuArrowRight, LuArrowLeft, LuCheck, LuCrown, LuHouse, LuBriefcase, LuUserCog, LuShieldAlert, LuPlus, LuX, LuPencilRuler } from 'react-icons/lu';
+import { LuLogIn, LuMail, LuArrowRight, LuArrowLeft, LuCheck, LuCrown, LuHouse, LuBriefcase, LuUserCog, LuShieldAlert, LuPlus, LuX, LuPencilRuler, LuLayers, LuShieldCheck } from 'react-icons/lu';
 import { useStore } from '../data/store';
 import { A, ROLE_SHORT, uid } from '../data/api';
 import { todayISO } from '../data/dates';
 import { Btn, Field, Input, Select, Callout, Check, cx, Segmented } from '../ui/core';
-import { PlanSvg } from '../ui/PlanSvg';
 import { Logo } from '../ui/charts';
 import { PERSONAS } from '../shells/common';
 
-export function AuthLayout({ children, title, sub }: any) {
+/** The frame of every sign-in screen: a clear way back, the form, and a panel that shows the real product.
+ *  `admin` marks the platform sign-in (no product panel, no links to the public site). */
+export function AuthLayout({ children, title, sub, admin }: any) {
   const { nav, live } = useStore();
+  const site = typeof location !== 'undefined' && location.protocol === 'https:';
+  const home = () => { if (live) nav('/'); else if (site) location.href = '/'; else nav('/login'); };
   return (
-    <div className="auth-wrap">
+    <div className={cx('auth-wrap', admin && 'admin')}>
       <div className="auth-form">
         <div className="auth-card stack-lg">
-          <button type="button" className="row g8 auth-brand" style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink)', padding: 0 }} onClick={() => nav('/pricing')}><Logo /><span className="display" style={{ fontSize: '1.4rem' }}>Archi<span style={{ color: 'var(--accent-strong)' }}>Flow</span></span></button>
+          <div className="auth-top">
+            <button type="button" className="row g8 auth-brand" onClick={home} aria-label={live || site ? 'ArchiFlow – לדף הבית' : 'ArchiFlow'}><Logo /><span className="display" style={{ fontSize: '1.4rem' }}>Archi<span style={{ color: 'var(--accent-strong)' }}>Flow</span></span></button>
+            {admin ? null : live ? <button type="button" className="linkish auth-back" onClick={() => nav('/')}><LuArrowRight aria-hidden />לדף הבית</button>
+              : site ? <a className="linkish auth-back" href="/"><LuArrowRight aria-hidden />יציאה מההדגמה</a> : null}
+          </div>
           <div><h1 className="display" style={{ fontSize: 'var(--fs-2xl)' }}>{title}</h1>{sub ? <p className="soft mt8">{sub}</p> : null}</div>
           {children}
         </div>
       </div>
-      <div className="auth-art">
-        <div style={{ position: 'absolute', inset: '10% -14% auto -6%', opacity: 0.5, ['--plan-paper' as any]: 'transparent', ['--plan-ink' as any]: 'rgba(169,179,201,.55)', ['--plan-fill' as any]: 'transparent', ['--blueprint' as any]: 'rgba(31,179,163,.6)' }} aria-hidden><PlanSvg layout="villa-ground" /></div>
-        <div style={{ position: 'relative' }}>{live ? null : <span className="admin-badge">גרסת הדגמה</span>}</div>
-        <div style={{ position: 'relative', maxWidth: 440 }}>
-          <div className="display" style={{ fontSize: '2.2rem', lineHeight: 1.2, color: 'var(--on-navy)' }}>כל הפרויקט, משרטוט ראשון ועד מסירת מפתח.</div>
-          <p style={{ color: 'var(--on-navy-2)', marginTop: 12 }}>שרטוטים עם גרסאות והערות, מפרטים שהלקוח מאשר בפורטל, רכש ותקציב – במקום אחד.</p>
+      {admin ? (
+        <div className="auth-art admin-art">
+          <div className="auth-art-in">
+            <span className="admin-badge">ניהול מערכת</span>
+            <div className="auth-art-h">גישה לצוות ArchiFlow בלבד.</div>
+            <p className="auth-art-p">כל כניסה ופעולה כאן נרשמות ביומן הביקורת. מומלץ להפעיל אימות דו-שלבי.</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="auth-art">
+          <div className="auth-art-in">
+            {live ? null : <span className="admin-badge">גרסת הדגמה</span>}
+            <div className="auth-art-h">כל הפרויקט, משרטוט ראשון ועד מסירת מפתח.</div>
+            <ul className="auth-art-list">
+              <li><LuLayers aria-hidden />שלבים, מפרטים ואישורי לקוח במקום אחד</li>
+              <li><LuHouse aria-hidden />פורטל ממותג שהלקוחות שלך יפתחו בשמחה</li>
+              <li><LuShieldCheck aria-hidden />בעברית, מאובטח, עם אימות דו-שלבי</li>
+            </ul>
+            {location.protocol === 'file:' ? null : <div className="auth-shots" aria-hidden="true">
+              <div className="auth-browser"><span className="auth-dots"><i /><i /><i /></span><img src="/landing-dashboard.webp" alt="" width="1600" height="961" onError={(e: any) => { e.currentTarget.closest('.auth-shots').style.display = 'none'; }} /></div>
+              <div className="auth-phone"><img src="/landing-portal.webp" alt="" width="780" height="1688" onError={(e: any) => { e.currentTarget.closest('.auth-phone').style.display = 'none'; }} /></div>
+            </div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -106,9 +130,9 @@ export function DemoWelcome() {
         </div>
       </div>
       <div className="demo-more">
-        <button type="button" className="linkish" onClick={() => switchUser('sa_ron')}>כניסה כמנהלת המערכת (Super Admin)</button>
         <button type="button" className="linkish" onClick={() => nav('/demo-login')}>לראות את מסך ההתחברות</button>
         {location.protocol === 'https:' ? <a className="linkish" href="/#/register">רוצים משרד אמיתי? פתיחת משרד</a> : null}
+        {location.protocol === 'https:' ? <a className="linkish" href="/">חזרה לאתר ArchiFlow</a> : null}
       </div>
     </AuthLayout>
   );
@@ -213,5 +237,16 @@ export function Onboarding() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Demo of the platform console. Like the real one it is not linked from anywhere – only its address leads here. */
+export function DemoAdminLogin() {
+  const { switchUser } = useStore();
+  return (
+    <AuthLayout admin title="ניהול מערכת" sub="כניסה לצוות ArchiFlow בלבד.">
+      <Callout kind="assume" title="זו הדגמה">באתר האמיתי נדרשים כאן מייל וסיסמה של חשבון ניהול, ואם הופעל – גם קוד אימות דו-שלבי. בהדגמה נכנסים לקונסולה לדוגמה בלחיצה.</Callout>
+      <Btn kind="primary" size="lg" block onClick={() => switchUser('sa_ron')}>כניסה לקונסולת הניהול לדוגמה</Btn>
+    </AuthLayout>
   );
 }

@@ -537,6 +537,23 @@ log((await q(`select count(*) from auth.mfa_factors where user_id = '${YOAV}'`))
 const errsE = [...mf2.errors].filter((e) => !/ERR_TUNNEL|fonts|Failed to load resource|401|403|422/.test(e));
 await mf2.context().close();
 
+// ---------------------------------------------------------------- separate platform-console entrance
+const ad = await newPage(browser);
+await ad.goto(BASE + '/#/login'); await settle(ad);
+log(!(await ad.evaluate(() => document.body.innerText.includes('ניהול מערכת'))), 'the ordinary sign-in page does not mention the platform console');
+await ad.goto(BASE + '/#/admin-login'); await ad.fill('#ad-e', EMAIL.yoav); await ad.fill('#ad-p', PW); await ad.click('button[type=submit]'); await ad.waitForTimeout(2000);
+log(await ad.isVisible('text=אין הרשאת ניהול'), 'an office account is refused at the console entrance');
+await ad.goto(BASE + '/#/admin-login'); await ad.fill('#ad-e', EMAIL.ron); await ad.fill('#ad-p', PW); await ad.click('button[type=submit]');
+await ad.waitForFunction(() => location.hash.startsWith('#/admin') && !location.hash.includes('login'), null, { timeout: 15000 }).catch(() => {});
+log(ad.url().includes('#/admin'), 'the super admin enters the console from its own page');
+await ad.click('.role-pill'); await ad.click('text=התנתקות'); await ad.waitForTimeout(1200);
+log(ad.url().includes('admin-login?out=1') && await ad.isVisible('text=יצאת מקונסולת הניהול'), 'leaving the console returns to its entrance with a message');
+await login(ad, 'yoav'); await ad.click('.role-pill'); await ad.click('text=התנתקות'); await ad.waitForTimeout(1200);
+log(await ad.isVisible('text=יצאת מהחשבון'), 'signing out says so on the sign-in page');
+await ad.click('.auth-back'); await ad.waitForTimeout(600);
+log(await ad.isVisible('.landing'), '"to the home page" leads home');
+await ad.context().close();
+
 const errs = [...errsA, ...errsB, ...errsC, ...errsE];
 console.log(errs.length ? 'PAGE ERRORS:\n' + errs.join('\n') : 'no page errors');
 console.log(`${results.filter(Boolean).length} passed, ${results.filter((x) => !x).length} failed`);

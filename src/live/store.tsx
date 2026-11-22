@@ -16,7 +16,7 @@ export interface LiveApi {
   /** two-factor: the verified factor waiting for its code (status 'mfa'), and how to enter it */
   mfaFactorId: string | null; completeMfa: (code: string) => Promise<void>;
   contexts: LiveContext[]; current: LiveContext | null; switchContext: (key: string) => void;
-  signOut: () => Promise<void>; reload: () => Promise<void>; afterAuth: () => Promise<void>; saving: boolean;
+  signOut: () => Promise<void>; reload: () => Promise<void>; afterAuth: () => Promise<void>; afterAdminAuth: () => Promise<boolean>; saving: boolean;
   landing: null | { kind: 'verified' | 'expired'; name?: string; email?: string }; clearLanding: () => void;
   upload: (bucket: string, projectId: string | null, file: File) => Promise<{ path: string; size: number }>;
   fileUrl: (bucket: string, path: string, download?: string) => Promise<string>;
@@ -27,7 +27,12 @@ export interface LiveApi {
 
 const ACTION_NAMES = new Map<any, string>(Object.entries(A).map(([k, f]) => [f, k]));
 const CTX_KEY = 'archiflow.context.v1';
-const PUBLIC = new Set(['', 'home', 'login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing', 'accessibility']);
+// The platform console is entered only through its own sign-in page (#/admin-login). This tab-only flag says it was.
+// It hides the console from the ordinary account menu; the database still decides who is a super admin.
+const ADMIN_FLAG = 'archiflow.admin';
+const adminEntered = () => { try { return sessionStorage.getItem(ADMIN_FLAG) === '1'; } catch { return false; } };
+const setAdminEntered = (on: boolean) => { try { if (on) sessionStorage.setItem(ADMIN_FLAG, '1'); else sessionStorage.removeItem(ADMIN_FLAG); } catch { /* ignore */ } };
+const PUBLIC = new Set(['', 'home', 'login', 'admin-login', 'register', 'forgot', 'reset-password', 'accept-invite', 'confirm', 'pricing', 'accessibility']);
 
 function readPathFromUrl(): string | null {
   try {
@@ -115,10 +120,12 @@ export function LiveStoreProvider({ children }: { children: any }) {
     const list: LiveContext[] = [];
     for (const m of c.memberships || []) list.push({ key: 'o:' + m.office_id, kind: 'office', officeId: m.office_id, officeName: m.office_name, role: m.role });
     for (const ct of c.client_contacts || []) list.push({ key: 'c:' + ct.contact_id, kind: 'client', officeId: ct.office_id, officeName: ct.office_name, role: 'client', clientId: ct.client_id, contactId: ct.contact_id });
-    if (c.is_super_admin) list.push({ key: 'admin', kind: 'admin', officeId: null, officeName: 'ArchiFlow – ניהול פלטפורמה', role: 'super_admin' });
+    // an account that is only a super admin keeps working after a reload; otherwise the console needs its own entrance
+    if (c.is_super_admin && (adminEntered() || !list.length)) list.push({ key: 'admin', kind: 'admin', officeId: null, officeName: 'ArchiFlow – ניהול פלטפורמה', role: 'super_admin' });
     return { list, uid: c.user_id };
   }, [api]);
 
+  const preferRef = useRef<string | null>(null);
   const boot = useCallback(async (opts: { landing?: boolean } = {}) => {
     if (!api.session) { setStatus('anon'); setContexts([]); const seg = path.split(/[/?]/)[1] || ''; if (!PUBLIC.has(seg)) go('/login', true); return; }
     setStatus('loading');
@@ -134,7 +141,8 @@ export function LiveStoreProvider({ children }: { children: any }) {
       if (!r) { await api.signOut(); setStatus('anon'); go('/login', true); return; }
       setContexts(r.list);
       if (!r.list.length) { setStatus('no-context'); const seg = path.split(/[/?]/)[1]; if (seg !== 'accept-invite') go('/onboarding', true); return; }
-      const cx = r.list.find((x) => x.key === ctxKey) || r.list[0];
+      const want = preferRef.current || ctxKey; preferRef.current = null;
+      const cx = r.list.find((x) => x.key === want) || r.list[0];
       setCtxKey(cx.key);
       await load(cx, r.uid);
       setStatus('ready');
@@ -212,12 +220,25 @@ export function LiveStoreProvider({ children }: { children: any }) {
     load(cx, api.session!.user.id).then(() => { setStatus('ready'); go(defaultPathFor({ role: cx.role } as any)); }).catch((e) => { setError(friendlyError(e)); setStatus('error'); });
   }, [contexts, load, api, go]);
 
-  const signOut = useCallback(async () => { await api.signOut(); dbRef.current = empty; setDb(empty); setContexts([]); setStatus('anon'); go('/login', true); }, [api, empty, go]);
+  const signOut = useCallback(async () => {
+    const wasAdmin = current?.kind === 'admin';
+    await api.signOut(); setAdminEntered(false); dbRef.current = empty; setDb(empty); setContexts([]); setStatus('anon');
+    go(wasAdmin ? '/admin-login?out=1' : '/login?out=1', true);
+  }, [api, empty, go, current]);
 
   const live: LiveApi = {
     api, session, status, error, contexts, current, switchContext, signOut, reload, saving,
     landing, clearLanding: () => setLanding(null),
     afterAuth: () => boot({ landing: true }),
+    afterAdminAuth: async () => {
+      // with two-factor on, the database answers "super admin" only after the code – the console then appears only if it is true
+      const needsCode = api.aal() !== 'aal2' && (await api.factors().catch(() => [])).some((f) => f.status === 'verified');
+      const c: any = needsCode ? { is_super_admin: true } : await api.rpc('my_context').catch(() => null);
+      if (!c?.is_super_admin) { await api.signOut(); setAdminEntered(false); return false; }
+      setAdminEntered(true); preferRef.current = 'admin';
+      try { localStorage.setItem(CTX_KEY, 'admin'); } catch { /* ignore */ }
+      await boot({ landing: true }); return true;
+    },
     mfaFactorId,
     completeMfa: async (code: string) => { if (!mfaFactorId) return; await api.verifyTotp(mfaFactorId, code); await boot({ landing: true }); },
     upload: async (bucket, projectId, file) => {

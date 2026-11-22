@@ -32,6 +32,7 @@ export function LiveLogin() {
   };
   return (
     <AuthLayout title="כניסה לחשבון" sub={pendingInvite() ? 'התחברו כדי להצטרף למשרד שהזמין אתכם.' : 'ברוכים השבים.'}>
+      {q.out ? <Callout kind="ok" icon={LuLogOut}>יצאת מהחשבון. אפשר להיכנס שוב, או לחזור לדף הבית.</Callout> : null}
       <form className="stack" onSubmit={submit} noValidate>
         <Field label="מייל" htmlFor="lg-e"><Input id="lg-e" className="ltr" type="email" autoComplete="email" value={email} onChange={(e: any) => setEmail(e.target.value)} invalid={!!err} /></Field>
         <Field label="סיסמה" htmlFor="lg-p"><Input id="lg-p" type="password" autoComplete="current-password" value={pw} onChange={(e: any) => setPw(e.target.value)} /></Field>
@@ -47,6 +48,38 @@ export function LiveLogin() {
           <LuArrowLeft aria-hidden />
         </a>
       )}
+    </AuthLayout>
+  );
+}
+
+/** Platform console sign-in. Not linked from anywhere; the address is known only to the ArchiFlow team.
+ *  Being here gives nothing: the database checks the super-admin role (and the two-factor code) on every request. */
+export function LiveAdminLogin() {
+  const { live, path } = useStore();
+  const q = parseRoute(path).query;
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: any) => {
+    e.preventDefault();
+    if (!okEmail(email)) { setErr('כתובת המייל לא תקינה'); return; }
+    if (!pw) { setErr('יש להזין סיסמה'); return; }
+    setErr(''); setBusy(true);
+    try {
+      await live!.api.signIn(email.trim(), pw);
+      if (!(await live!.afterAdminAuth())) setErr('לחשבון הזה אין הרשאת ניהול מערכת. משרדים ולקוחות נכנסים מדף הכניסה הרגיל.');
+    } catch (x: any) { setErr(friendlyError(x)); } finally { setBusy(false); }
+  };
+  return (
+    <AuthLayout admin title="ניהול מערכת" sub="כניסה לצוות ArchiFlow בלבד.">
+      {q.out ? <Callout kind="ok" icon={LuLogOut}>יצאת מקונסולת הניהול.</Callout> : null}
+      <form className="stack" onSubmit={submit} noValidate>
+        <Field label="מייל" htmlFor="ad-e"><Input id="ad-e" className="ltr" type="email" autoComplete="username" value={email} onChange={(e: any) => setEmail(e.target.value)} invalid={!!err} /></Field>
+        <Field label="סיסמה" htmlFor="ad-p"><Input id="ad-p" type="password" autoComplete="current-password" value={pw} onChange={(e: any) => setPw(e.target.value)} /></Field>
+        {err ? <Callout kind="bad">{err}</Callout> : null}
+        <Btn kind="primary" size="lg" block type="submit" icon={busy ? undefined : LuKeyRound} disabled={busy}>{busy ? <><Spin />בודק…</> : 'כניסה לניהול'}</Btn>
+      </form>
     </AuthLayout>
   );
 }

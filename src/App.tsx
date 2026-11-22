@@ -8,7 +8,7 @@ import { defaultPathFor } from './data/store';
 import { canSeeFinance, hasFeature } from './data/api';
 import { LockedFeature } from './pages/shared';
 
-import { Login, DemoWelcome, Register, Forgot, Onboarding } from './pages/Auth';
+import { Login, DemoWelcome, DemoAdminLogin, Register, Forgot, Onboarding } from './pages/Auth';
 import { Dashboard } from './pages/Dashboard';
 import { ProjectsList } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
@@ -32,7 +32,7 @@ import { AccessibilityStatement } from './pages/AccessibilityStatement';
 import { TimePage } from './pages/Time';
 import { LibraryPage } from './pages/Library';
 import { Landing } from './pages/Landing';
-import { LiveLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired, LiveMfaChallenge } from './live/AuthLive';
+import { LiveLogin, LiveAdminLogin, LiveRegister, LiveForgot, LiveResetPassword, LiveAcceptInvite, LiveOnboarding, LiveLoading, LiveError, LiveVerified, LiveLinkExpired, LiveMfaChallenge } from './live/AuthLive';
 
 function Denied({ text }: any) {
   const { me, nav, live } = useStore();
@@ -109,15 +109,17 @@ export function App() {
       if (a === 'register') return <PublicShell plain><LiveRegister /></PublicShell>;
       if (a === 'forgot') return <PublicShell plain><LiveForgot /></PublicShell>;
       if (a === 'pricing') return <PublicShell><PricingPage /></PublicShell>;
+      if (a === 'admin-login') return <PublicShell plain><LiveAdminLogin /></PublicShell>;
       if (!a || a === 'home') return <Landing />;
       return <PublicShell plain><LiveLogin /></PublicShell>;
     }
     if (live.status === 'no-context') return <PublicShell plain><LiveOnboarding /></PublicShell>;
     if (a === 'onboarding') return <PublicShell plain><LiveOnboarding /></PublicShell>;
-    if (['login', 'register', 'forgot'].includes(a)) return <LiveLoading />;
+    if (['login', 'admin-login', 'register', 'forgot'].includes(a)) return <LiveLoading />;
   }
   // demo: the entrance explains the demo and lets you pick a role; the sample login form stays one click away
   if (a === 'login') return <PublicShell plain><DemoWelcome /></PublicShell>;
+  if (a === 'admin-login') return <PublicShell plain><DemoAdminLogin /></PublicShell>;
   if (a === 'demo-login') return <PublicShell plain><Login /></PublicShell>;
   if (a === 'register') return <PublicShell plain><Register /></PublicShell>;
   if (a === 'forgot') return <PublicShell plain><Forgot /></PublicShell>;

@@ -12,7 +12,6 @@ export const PERSONAS = [
   { id: 'u_shira', note: 'רק פרויקטים משויכים, ללא כספים' },
   { id: 'cu_dana', note: 'פורטל לקוח – פנטהאוז' },
   { id: 'cu_yael', note: 'פורטל לקוח – משרדים' },
-  { id: 'sa_ron', note: 'קונסולת פלטפורמה' },
 ];
 
 function AccountMenu({ compact }: any) {
@@ -64,7 +63,8 @@ export function RoleSwitcher({ compact }: any) {
       })}
       <hr className="sep" style={{ margin: '6px 0' }} />
       {me.officeId ? <MenuItem icon={LuUserCog} onClick={() => nav('/profile')}>הפרופיל שלי</MenuItem> : null}
-      <MenuItem icon={LuLogOut} onClick={() => nav('/login')}>יציאה למסך ההתחברות</MenuItem>
+      <MenuItem icon={LuRotateCcw} onClick={() => nav('/login')}>חזרה למסך הפתיחה של ההדגמה</MenuItem>
+      {location.protocol === 'https:' ? <MenuItem icon={LuLogOut} onClick={() => { location.href = '/'; }}>יציאה מההדגמה לאתר</MenuItem> : null}
     </Menu>
   );
 }
@@ -88,7 +88,7 @@ export function DemoStrip() {
       {confirm ? (
         <span className="row g8"><span>לאפס את כל השינויים?</span><button type="button" className="linkish" onClick={() => { reset(); setConfirm(false); }}>כן, אפס</button><button type="button" className="linkish" onClick={() => setConfirm(false)}>לא</button></span>
       ) : (
-        <span className="row g12">{path.startsWith('/login') ? null : <button type="button" className="linkish" onClick={startTour}>סיור קצר</button>}<button type="button" className="linkish row g4" onClick={() => setConfirm(true)}><LuRotateCcw aria-hidden style={{ width: 12, height: 12 }} />איפוס נתוני הדגמה</button></span>
+        <span className="row g12">{path.startsWith('/login') ? null : <button type="button" className="linkish" onClick={startTour}>סיור קצר</button>}<button type="button" className="linkish row g4" onClick={() => setConfirm(true)}><LuRotateCcw aria-hidden style={{ width: 12, height: 12 }} />איפוס נתוני הדגמה</button>{location.protocol === 'https:' ? <a className="linkish" href="/">יציאה מההדגמה</a> : null}</span>
       )}
     </div>
   );

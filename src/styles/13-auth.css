@@ -1,0 +1,39 @@
+/* Sign-in screens: a clear way back on top, and a side panel that shows the real product (same colours and fonts). */
+.auth-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.auth-brand { background: none; border: 0; cursor: pointer; color: var(--ink); padding: 0; }
+.auth-back { display: inline-flex; align-items: center; gap: 4px; min-height: var(--tap); font-size: var(--fs-sm); text-decoration: none; }
+.auth-back svg { width: 16px; height: 16px; }
+
+.auth-art { justify-content: center; padding: 48px; background-image:
+  linear-gradient(rgba(244, 175, 180, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(244, 175, 180, .07) 1px, transparent 1px),
+  radial-gradient(90% 80% at 100% 100%, rgba(var(--accent-rgb), .16), transparent 60%);
+  background-size: 32px 32px, 32px 32px, auto; }
+.auth-art-in { position: relative; max-width: 560px; width: 100%; margin-inline: auto; display: flex; flex-direction: column; gap: 24px; }
+.auth-art-in .admin-badge { align-self: flex-start; }
+.auth-art-h { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 1.2rem + 1.6vw, 2.6rem); line-height: 1.12; letter-spacing: -0.02em; color: var(--on-navy); }
+.auth-art-p { margin: 0; color: var(--on-navy-2); line-height: 1.6; }
+.auth-art-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; color: var(--on-navy); }
+.auth-art-list li { display: flex; align-items: center; gap: 12px; }
+.auth-art-list svg { width: 20px; height: 20px; flex: none; color: var(--accent-bright); }
+
+.auth-shots { position: relative; padding-bottom: 32px; margin-top: 8px; }
+.auth-browser { border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: 0 32px 64px -24px rgba(0, 0, 0, .55); border: 1px solid rgba(255, 255, 255, .12); }
+.auth-dots { display: flex; gap: 6px; padding: 8px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.auth-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.auth-browser img, .auth-phone img { display: block; width: 100%; height: auto; }
+.auth-phone { position: absolute; inset-inline-end: -24px; bottom: 0; width: 26%; min-width: 110px; padding: 6px; border-radius: 24px; background: #120B10; box-shadow: 0 24px 48px -16px rgba(0, 0, 0, .7); }
+.auth-phone img { border-radius: 18px; aspect-ratio: 9 / 17; object-fit: cover; object-position: top; }
+
+/* platform sign-in: quiet, no product, no public links */
+.admin-art { background-image: linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px); background-size: 32px 32px; }
+.admin-art::before, .admin-art::after { display: none; }
+
+@media (max-width: 1200px) { .auth-phone { inset-inline-end: -8px; } }
+/* phone: the product panel follows the form instead of disappearing */
+@media (max-width: 900px) {
+  .auth-wrap { grid-template-columns: 1fr; }
+  .auth-art:not(.admin-art) { display: flex; padding: 40px 16px 48px; position: relative; height: auto; }
+  .auth-art-h { font-size: 1.75rem; }
+  .auth-phone { display: none; }
+  .auth-shots { padding-bottom: 0; }
+}
